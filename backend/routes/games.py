@@ -28,7 +28,7 @@ async def create_game(game_request: dict, user_id: str):
         title = game_request["title"]
         description = game_request["description"] 
         character_count = game_request.get("character_count")
-        
+        opening_summary = game_request.get("opening_summary")
         
         # Generate game using agent
         agent_result = create_murder_mystery_game(title, description, character_count)
@@ -44,6 +44,7 @@ async def create_game(game_request: dict, user_id: str):
             "status": "CAST_READY",
             "created_at": datetime.now().isoformat(),
             "updated_at": datetime.now().isoformat(),
+            "opening_summary": opening_summary,
             "is_active": True,
         }
         
