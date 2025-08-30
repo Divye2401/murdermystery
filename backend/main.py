@@ -1,4 +1,5 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
@@ -32,6 +33,18 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "service": "murder-mystery-backendddddd"}
+
+
+@app.exception_handler(404)
+async def custom_404_handler(request: Request, exc):
+    return JSONResponse(
+        status_code=404,
+        content={
+            "error": "Endpoint not found",
+            "path": str(request.url.path),
+            "method": request.method
+        }
+    )
 
 if __name__ == "__main__":
     import uvicorn

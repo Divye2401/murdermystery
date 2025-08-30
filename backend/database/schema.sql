@@ -20,10 +20,11 @@ CREATE TABLE characters (
     game_id UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     description TEXT,
-    persona JSONB NOT NULL DEFAULT '{}',
+    personality JSONB NOT NULL DEFAULT '{}',
     lie_policy TEXT NOT NULL DEFAULT 'honest' CHECK (lie_policy IN ('honest', 'evasive', 'deceptive', 'pathological')),
     is_killer BOOLEAN NOT NULL DEFAULT FALSE,
     is_alive BOOLEAN NOT NULL DEFAULT TRUE,
+    is_victim BOOLEAN NOT NULL DEFAULT FALSE,
     secrets JSONB DEFAULT '[]',
     relationships JSONB DEFAULT '{}',
     metadata JSONB DEFAULT '{}',
@@ -37,7 +38,7 @@ CREATE TABLE locations (
     name TEXT NOT NULL,
     description TEXT NOT NULL,
     is_accessible BOOLEAN NOT NULL DEFAULT TRUE,
-    connected_locations UUID[] DEFAULT '{}',
+    connected_locations TEXT[] DEFAULT '{}',
     atmosphere TEXT DEFAULT 'neutral',
     metadata JSONB DEFAULT '{}',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -49,12 +50,12 @@ CREATE TABLE clues (
     game_id UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
-    location_id UUID REFERENCES locations(id),
+    location_id TEXT,
     is_revealed BOOLEAN NOT NULL DEFAULT FALSE,
     discovered_by TEXT,
     discovery_method TEXT DEFAULT 'investigation',
     significance_level INTEGER DEFAULT 1 CHECK (significance_level BETWEEN 1 AND 5),
-    points_to UUID[] DEFAULT '{}', -- Points to character/location IDs
+    points_to TEXT[] DEFAULT '{}', -- Points to character/location names
     metadata JSONB DEFAULT '{}',
     discovered_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -66,11 +67,11 @@ CREATE TABLE timeline_events (
     game_id UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
     event_time TIMESTAMPTZ NOT NULL,
     event_description TEXT NOT NULL,
-    location_id UUID REFERENCES locations(id),
-    character_ids UUID[] DEFAULT '{}',
+    location_id TEXT,
+    character_ids TEXT[] DEFAULT '{}',
     event_type TEXT DEFAULT 'general' CHECK (event_type IN ('murder', 'discovery', 'conversation', 'movement', 'general')),
     is_public BOOLEAN NOT NULL DEFAULT TRUE,
-    witness_ids UUID[] DEFAULT '{}',
+    witness_ids TEXT[] DEFAULT '{}',
     metadata JSONB DEFAULT '{}',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
