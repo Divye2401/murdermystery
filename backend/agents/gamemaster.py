@@ -1,4 +1,4 @@
-from crewai import Agent, Task, Crew, Process
+from crewai import Agent, Task, Crew, Process, LLM
 import os
 from pathlib import Path
 from classes import GetCharacterDataTool, GetLocationDataTool, GetCluesInLocationTool, SearchCharactersTool, GetTimelineEventsTool, GetAllCluesTool, GetAllLocationDataTool
@@ -6,6 +6,7 @@ from classes import GetCharacterDataTool, GetLocationDataTool, GetCluesInLocatio
 
 
 # Master Agent
+llm = LLM(model="gpt-4o")
 
 master_agent = Agent(
     role="Game Master Orchestrator",
@@ -18,11 +19,14 @@ master_agent = Agent(
     Available Team Members:
     - Database Query Specialist (database_agent)
     - Character Roleplay Specialist (character_agent)
+    Follow the correct tool usage format when delegating tasks.
+
+    Provide output strictly in the format of GameResponse.
+    Follow the correct tool usage format when delegating tasks.
     Use the exact role names above when delegating tasks.
     Only use the approriate members needed to complete the task.
-    When sending to roleplay, send relevant information about the characters personality, secrets, lying policy, and motivations also to the character agent.
+    When sending to roleplay, send relevant information about the characters personality, secrets, lying policy, and motivations also to the character agent. Respond in first person IF roleplaying.
     If the character is dead, say so and do not roleplay.
-    Dont summarize the roleplay if not needed, just respond with the roleplay.
 
 
     
@@ -32,7 +36,8 @@ master_agent = Agent(
     You coordinate the entire game experience and ensure all interactions are realistic and consistent 
     with the murder mystery story.""",
     verbose=True,
-    
+    max_iter=20,
+    llm=llm
     )
 
 database_agent = Agent(
@@ -58,7 +63,7 @@ database_agent = Agent(
     coordinate the game experience.
     IMPORTANT: If you cannot find the information, say so and do not make up information.""",
     verbose=True,
-    max_iter=20
+   
     
 )
 
@@ -96,7 +101,7 @@ def handle_query(game_id: str, player_query: str, conversation_history: list = N
         description=f"""Handle player interaction in game 
         Use the game_id: {game_id} to get the game data.
         Player query: {player_query}
-        Conversation history: {conversation_history}
+        Conversation history: {conversation_history}- Use this to figure out the current context in relation to the players query.
         
         Analyze the player query to determine:
         1. What the player wants to do
@@ -131,7 +136,7 @@ def handle_query(game_id: str, player_query: str, conversation_history: list = N
         process=Process.hierarchical,
         manager_agent=master_agent,
         verbose=True,
-        memory=False
+        
     )
 
 

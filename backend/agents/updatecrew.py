@@ -29,7 +29,7 @@ update_agent = Agent(
     4. Avoid duplicate updates for things that already exist
     
     WHAT TO LOOK FOR:
-    - NEW clues discovered (check if clue already exists first)
+    - NEW clues discovered or current clues updated to is_revealed: true(check if clue already exists first)
     - Character status changes (check current status first)
     - Location accessibility changes (check current state first)
     - Important events for timeline (check if similar event exists)
@@ -69,7 +69,7 @@ async def analyze_for_updates(game_id: str, player_query: str, ai_response: str)
         3. Did any character status change?
         4. Did any locations become accessible/inaccessible?
         5. Should any timeline events be recorded?
-        6. Were any character secrets revealed?
+        6. Were any character secrets/traits revealed?
         7. Were any character relationships/conversations revealed?
         
         STEP 3: Only suggest updates for actual changes between the current state and the interaction
@@ -81,12 +81,16 @@ async def analyze_for_updates(game_id: str, player_query: str, ai_response: str)
         For each update:
         - Specify exact table (clues, timeline_events, characters, locations)
         - Specify action (insert, update, delete)
-        - Provide data to insert/update/delete
+        - Provide data to insert/update/delete 
         - Give clear reasoning based on your tool checks
         
-        Use your database tools to avoid duplicate updates!
+        
+        IMPORTANT: Use your database tools to avoid duplicate updates!
+        Only provide existing columns in the database, do not make up columns.
+        If providing timeline events, make sure event_time is the latest chronologically.
+        IMPORTANT: Provide data strictly in the format of GameUpdateAnalysis, nothing extra.
         """,
-        expected_output="Structured analysis of required database updates",
+        expected_output="Structured analysis of required database updates in the format of GameUpdateAnalysis",
         agent=update_agent,
         output_pydantic=GameUpdateAnalysis
     )

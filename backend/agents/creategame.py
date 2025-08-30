@@ -37,12 +37,15 @@ def create_murder_mystery_game(title: str, description: str, character_count: st
         7. Make sure clues point to different characters to create red herrings
         
         CHARACTER GUIDELINES:
+        - Victim cannot be the killer, Victim is always dead(is_alive: false) and is_victim: true, Killer is always alive(is_alive: true) and is_killer: true
         - Each character needs a unique lie_policy: honest, evasive, deceptive, or pathological
         - Give characters realistic secrets and relationships
         - The killer should have a clear motive and opportunity
         - Create believable alibis and contradictions
+        - Have 1-2 observations of the environment/other characters
         - Make sure the relationships clearly mention the characters by their names and not by reference to the character type
-        - IMPORTANT: Also include the victim character within the characters list (is_victim: true and is_alive: false)
+        - IMPORTANT: Also include the victim character within the characters list 
+
         
         CLUE GUIDELINES:
         - Mix significance levels: some crucial (4-5), some minor (1-2)
@@ -57,6 +60,7 @@ def create_murder_mystery_game(title: str, description: str, character_count: st
         - Use realistic timestamps (in ISO Format YYYY-MM-DDTHH:MM:SSZ)
         - Make sure the events are not duplicated
         - Characted Ids should containt the names of the characters
+        - Make sure the timeline matches the victim correctly
         
         Return the complete game data following the GameSetup schema with all required fields properly structured.
         """,

@@ -19,6 +19,7 @@ class Character(BaseModel):
     is_victim: bool = Field(default=False, description="Whether the character is the victim")
     secrets: list = Field(default=[], description="Array of secrets the character is hiding")
     relationships: dict = Field(default={}, description="Character's relationships with others as JSON object")
+    observations: dict = Field(default={}, description="Character's observations of the scene and other characters as JSON object")
     metadata: dict = Field(description="Additional character data as JSON object")
 
 
@@ -128,7 +129,7 @@ class GetCharacterDataTool(BaseTool):
         """Get character data from database."""
         try:
             supabase = get_supabase_client()
-            response = supabase.table("characters").select("*").eq("game_id", game_id).eq("name", character_name).execute()
+            response = supabase.table("characters").select("*").eq("game_id", game_id).ilike("name", f"%{character_name}%").execute()
             
             if response.data:
                 character = response.data[0]
@@ -139,7 +140,8 @@ class GetCharacterDataTool(BaseTool):
                     "lie_policy": character["lie_policy"],
                     "is_killer": character["is_killer"],
                     "secrets": character["secrets"],
-                    "relationships": character["relationships"]
+                    "relationships": character["relationships"],
+                    "observations": character["observations"]
                 })
             return "Character not found"
         except Exception as e:
@@ -153,8 +155,11 @@ class GetLocationDataTool(BaseTool):
     def _run(self, game_id: str, location_name: str) -> str:
         """Get location data from database."""
         try:
+            
             supabase = get_supabase_client()
-            response = supabase.table("locations").select("*").eq("game_id", game_id).eq("name", location_name).execute()
+            
+         
+            response = supabase.table("locations").select("*").eq("game_id", game_id).ilike("name", f"%{location_name}%").execute() #partial match
             
             if response.data:
                 location = response.data[0]

@@ -69,10 +69,11 @@ async def create_game(game_request: dict, user_id: str):
                 "personality": character.get("personality", {}),
                 "lie_policy": character.get("lie_policy", "honest"),
                 "is_killer": character.get("is_killer", False),
-                "is_alive": character.get("is_alive", True),
+                "is_alive": True if character.get("is_victim", False) else False,
                 "is_victim": character.get("is_victim", False),
                 "secrets": character.get("secrets", []),
                 "relationships": character.get("relationships", {}),
+                "observations": character.get("observations", {}),
                 "metadata": character.get("metadata", {})
             }
             supabase.table("characters").insert(char_record).execute()
@@ -160,7 +161,7 @@ async def query_game(game_id: str, query: dict):
         
         # Fetch recent conversation history for context
         supabase = get_supabase_client()
-        history_response = supabase.table("interactions").select("user_query, agent_response, created_at").eq("game_id", game_id).order("created_at", desc=False).limit(10).execute()
+        history_response = supabase.table("interactions").select("user_query, agent_response, created_at").eq("game_id", game_id).order("created_at", desc=True).limit(5).execute()
         
         conversation_history = history_response.data if history_response.data else []
 
@@ -193,30 +194,57 @@ async def query_game(game_id: str, query: dict):
 async def bg_process(game_id: str, query_text: str, result: str):
     """Background process for analyzing for updates and storing game update."""
     update_result = await analyze_for_updates(game_id, query_text, result)
+    print("Gotten Analysis")
     await store_game_update(game_id, update_result)
 
 async def store_game_update(game_id: str, update_result: str):
     """Store game update in database."""
+    print(f"🔍 DEBUG: store_game_update STARTED with game_id: {game_id}")
+    
     try:
+        
         supabase = get_supabase_client()
-
-        print(type(update_result))
         print(update_result)
-        updates=json.loads(update_result)
+        updates = json.loads(update_result)
+       
 
-        for update in updates.get("updates", []):
+        for i, update in enumerate(updates.get("updates", [])):
+            print(f"🔍 DEBUG: Processing update {i+1} - {update['action']} on {update['table']}")
+            
             table = update["table"]
             action = update["action"]
             data = update["data"]
+            
+            if "id" in data:
+                del data["id"]  
+
             if action == "insert":
-                supabase.table(table).insert(data).execute()
-            elif action == "update":
-                name = data.get("name") or data.get("title")
-                supabase.table(table).update(data).eq("game_id", game_id).eq("name", name).execute()
-            elif action == "delete":
-                name = data.get("name") or data.get("title")
-                supabase.table(table).delete().eq("game_id", game_id).eq("name", name).execute()
+                data["game_id"] = game_id
                 
+                result = supabase.table(table).insert(data).execute()
+                
+                
+            elif action == "update":
+                if(data.get("name")):
+                    name = data.get("name")
+                    result = supabase.table(table).update(data).eq("game_id", game_id).eq("name", name).execute()
+                elif(data.get("title")):
+                    name = data.get("title")
+                    result = supabase.table(table).update(data).eq("game_id", game_id).eq("title", name).execute()
+               
+                
+            elif action == "delete":
+                if(data.get("name")):
+                    name = data.get("name")
+                    result = supabase.table(table).delete().eq("game_id", game_id).eq("name", name).execute()
+                elif(data.get("title")):
+                    name = data.get("title")
+                    result = supabase.table(table).delete().eq("game_id", game_id).eq("title", name).execute()
+               
+        
+        print("🔍 DEBUG: store_game_update FINISHED successfully")
 
     except Exception as e:
-        print(f"Failed to store game update: {str(e)}")
+        print(f"❌ ERROR in store_game_update: {str(e)}")
+        import traceback
+        print(f"❌ TRACEBACK: {traceback.format_exc()}")
