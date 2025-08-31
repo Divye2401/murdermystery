@@ -53,10 +53,10 @@ export default function AudioPlayer({ src, autoPlay = false, volume = 0.3 }) {
     <div className="fixed bottom-4 right-4 z-50">
       <button
         onClick={togglePlay}
-        className="bg-amber-600 hover:bg-amber-700 text-white p-3 rounded-full transition-colors duration-200"
+        className="bg-black text-white p-3 rounded-full transition-colors duration-200 text-2xl"
         title={isPlaying ? "Pause Music" : "Play Music"}
       >
-        {isPlaying ? "⏸️" : "▶️"}
+        {isPlaying ? "🔇" : "🎵"}
       </button>
       <audio ref={audioRef} src={src} loop />
     </div>
