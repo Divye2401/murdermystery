@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 const mockCharacters = [
   {
@@ -89,18 +90,19 @@ export default function Characters() {
   };
 
   return (
-    <div className="min-h-screen bg-mystery-dark text-foreground p-4">
+    <div className="min-h-screen bg-cover bg-center bg-no-repeat text-white p-4 bg-[linear-gradient(rgba(0,0,0,1),rgba(0,0,0,0.4)),url('/images/characters.png')]">
       {/* Header */}
-      <div className="max-w-7xl mx-auto mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <button className="text-gold hover:text-amber transition-colors">
-              ← Back to Investigation
-            </button>
-            <h1 className="font-mystery-bold text-3xl text-gold">
-              👥 Characters
-            </h1>
-          </div>
+      <div className="max-w-7xl mx-auto mb-10 pt-4">
+        <div className="grid grid-cols-3 items-center justify-items-center ">
+          <Link
+            href="/"
+            className="text-rose-gold hover:text-wine transition-colors justify-self-start"
+          >
+            ← Back to Investigation
+          </Link>
+          <h1 className="font-mystery-bold text-3xl text-rose-gold">
+            Characters
+          </h1>
         </div>
       </div>
 
@@ -111,53 +113,38 @@ export default function Characters() {
             <div
               key={character.id}
               onClick={() => setSelectedCharacter(character)}
-              className={`bg-mystery-medium border rounded-xl p-6 cursor-pointer transition-all duration-200 hover:bg-mystery-light ${
+              className={`bg-black/40 border rounded-2xl p-6 cursor-pointer transition-all  hover:scale-105 ${
                 selectedCharacter?.id === character.id
-                  ? "border-gold bg-gold/10"
-                  : "border-border-light hover:border-gold"
+                  ? " bg-rose-gold/90 hover:bg-rose-gold/70"
+                  : "border-white/20 hover:border-rose-gold hover:bg-black/60"
               }`}
             >
-              <div className="text-center mb-4">
+              <div className="text-center mb-4  transition-transform">
                 <div className="text-4xl mb-2">{character.avatar}</div>
-                <h3 className="font-mystery-bold text-xl text-gold">
+                <h3
+                  className={`font-mystery-bold text-lg  ${
+                    selectedCharacter?.id === character.id
+                      ? "text-burgundy-dark"
+                      : "text-rose-gold"
+                  }`}
+                >
                   {character.name}
                 </h3>
-                <p className="text-muted">{character.role}</p>
-                <p className="text-sm text-muted">Age: {character.age}</p>
               </div>
-
-              <div
-                className={`text-center py-2 px-4 rounded-lg text-sm font-medium border ${getStatusColor(
-                  character.status
-                )}`}
-              >
-                {character.status.charAt(0).toUpperCase() +
-                  character.status.slice(1)}
-              </div>
-
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleTalkToCharacter(character);
-                }}
-                className="w-full mt-4 py-2 px-4 bg-gold text-mystery-dark rounded-lg hover:bg-amber transition-colors font-medium"
-              >
-                Talk
-              </button>
             </div>
           ))}
         </div>
 
         {/* Selected Character Details */}
         {selectedCharacter && (
-          <div className="bg-mystery-medium border border-border-light rounded-3xl p-8">
+          <div className="bg-black/60 border border-white/20 rounded-3xl p-8">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="font-mystery-bold text-2xl text-gold">
+              <h2 className="font-mystery-bold text-2xl text-rose-gold">
                 Selected: {selectedCharacter.name}
               </h2>
               <button
                 onClick={() => setSelectedCharacter(null)}
-                className="text-muted hover:text-foreground transition-colors"
+                className="text-white/60 hover:text-white transition-colors"
               >
                 ✕
               </button>
@@ -166,21 +153,21 @@ export default function Characters() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Profile */}
               <div>
-                <h3 className="font-mystery-bold text-lg text-gold mb-3">
+                <h3 className="font-mystery-bold text-lg text-rose-gold mb-3">
                   📋 Profile
                 </h3>
-                <p className="text-foreground mb-4 leading-relaxed">
+                <p className="text-white mb-4 leading-relaxed">
                   {selectedCharacter.profile}
                 </p>
 
-                <h3 className="font-mystery-bold text-lg text-gold mb-3">
+                <h3 className="font-mystery-bold text-lg text-rose-gold mb-3">
                   🎯 Known Facts
                 </h3>
                 <ul className="space-y-2">
                   {selectedCharacter.facts.map((fact, index) => (
                     <li key={index} className="flex items-start space-x-2">
-                      <span className="text-gold">•</span>
-                      <span className="text-foreground">{fact}</span>
+                      <span className="text-rose-gold">•</span>
+                      <span className="text-white">{fact}</span>
                     </li>
                   ))}
                 </ul>
@@ -188,7 +175,7 @@ export default function Characters() {
 
               {/* Questions */}
               <div>
-                <h3 className="font-mystery-bold text-lg text-gold mb-3">
+                <h3 className="font-mystery-bold text-lg text-rose-gold mb-3">
                   ❓ Questions to Ask
                 </h3>
                 <div className="space-y-3">
@@ -196,9 +183,9 @@ export default function Characters() {
                     <button
                       key={index}
                       onClick={() => handleTalkToCharacter(selectedCharacter)}
-                      className="w-full text-left p-3 bg-mystery-light border border-border rounded-lg hover:border-gold hover:bg-mystery-dark transition-all duration-200"
+                      className="w-full text-left p-3 bg-black/30 border border-white/20 rounded-lg hover:border-rose-gold hover:bg-black/50 transition-all duration-200"
                     >
-                      <span className="text-foreground">{question}</span>
+                      <span className="text-white">{question}</span>
                     </button>
                   ))}
                 </div>
@@ -206,7 +193,7 @@ export default function Characters() {
                 <div className="mt-6">
                   <button
                     onClick={() => handleTalkToCharacter(selectedCharacter)}
-                    className="w-full py-3 px-6 bg-gold text-mystery-dark rounded-lg hover:bg-amber transition-colors font-medium"
+                    className="w-full py-3 px-6 bg-rose-gold text-burgundy-dark rounded-lg hover:bg-wine hover:text-white transition-colors font-medium"
                   >
                     💬 Start Conversation
                   </button>

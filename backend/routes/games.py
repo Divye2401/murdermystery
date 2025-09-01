@@ -22,8 +22,14 @@ async def create_game(game_request: dict, user_id: str):
         if not game_request.get("title") or not game_request.get("description") or not game_request.get("character_count"):
             raise HTTPException(400, "Missing required input fields")
         
-            
+        # Validate user exists (security check)
         supabase = get_supabase_client()
+        
+        user_response = supabase.auth.admin.get_user_by_id(user_id)
+        if not user_response.user:
+                raise HTTPException(400, "Invalid user ID")
+      
+        
 
         title = game_request["title"]
         description = game_request["description"] 
@@ -46,6 +52,7 @@ async def create_game(game_request: dict, user_id: str):
             "updated_at": datetime.now().isoformat(),
             "opening_summary": opening_summary,
             "is_active": True,
+            "in_progress": True,
         }
         
         game_response = supabase.table("games").insert(game_record).execute()

@@ -3,6 +3,8 @@ import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { GameProvider } from "@/contexts/GameContext";
 import QueryProvider from "@/contexts/QueryContext";
+import { DatabaseListener } from "@/hooks/useDatabaseListener";
+import ToasterComponent from "@/contexts/Toaster";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,7 +29,12 @@ export default function RootLayout({ children }) {
       >
         <AuthProvider>
           <QueryProvider>
-            <GameProvider>{children}</GameProvider>
+            <GameProvider>
+              <DatabaseListener>
+                {children}
+                <ToasterComponent />
+              </DatabaseListener>
+            </GameProvider>
           </QueryProvider>
         </AuthProvider>
       </body>

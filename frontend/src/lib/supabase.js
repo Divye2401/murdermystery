@@ -33,6 +33,10 @@ export const auth = {
     return user;
   },
 
+  getSession: async () => {
+    return await supabase.auth.getSession();
+  },
+
   onAuthStateChange: (callback) => {
     return supabase.auth.onAuthStateChange(callback);
   },

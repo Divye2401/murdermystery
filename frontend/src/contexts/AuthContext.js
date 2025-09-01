@@ -15,13 +15,16 @@ export const useAuth = () => {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [checkingUser, setCheckingUser] = useState(true); // Or could check getSession() first to set value
 
   useEffect(() => {
     const {
       data: { subscription },
     } = auth.onAuthStateChange((event, session) => {
+      setCheckingUser(true);
       console.log("Auth state changed:", event, session);
       setUser(session?.user ?? null);
+      setCheckingUser(false);
     });
 
     return () => subscription.unsubscribe();
@@ -29,6 +32,7 @@ export function AuthProvider({ children }) {
 
   const value = {
     user,
+    checkingUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

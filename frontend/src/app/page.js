@@ -1,56 +1,72 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { fetchConversationHistory } from "@/lib/helpers";
 import AudioPlayer from "@/components/AudioPlayer";
+import { useGame } from "@/contexts/GameContext";
 
 export default function Dashboard() {
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      type: "detective",
-      content:
-        "Welcome to the investigation room, Detective. The Ravenscroft Manor case files are ready. What would you like to investigate first?",
-      timestamp: "10:00 PM",
-    },
-  ]);
+  const { user, checkingUser } = useAuth();
+  const router = useRouter();
+  const { currentGameId: gameId, currentGamename: gameName } = useGame();
+  const queryClient = useQueryClient();
+
+  const {
+    data: conversations,
+    isLoading: conversationsLoading,
+    error: conversationsError,
+  } = useQuery({
+    queryKey: ["conversations", gameId],
+    queryFn: () => fetchConversationHistory(gameId),
+    enabled: !!gameId && !!user,
+    staleTime: 30 * 1000,
+    refetchInterval: 30 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // Protect this route - redirect to login if not authenticated
+  useEffect(() => {
+    if (!user && !checkingUser) {
+      router.push("/login");
+    }
+  }, [user, checkingUser, router]);
+
+  // Don't render dashboard if no user (will redirect)
+  if (!user) {
+    return null;
+  }
 
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
 
     // Add user message
-    const userMessage = {
-      id: Date.now(),
-      type: "user",
-      content: inputValue,
-      timestamp: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    };
 
-    setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
     setIsLoading(true);
 
     // TODO: Call AI backend here
     // For now, simulate AI response
     setTimeout(() => {
-      const aiResponse = {
+      const Response = {
         id: Date.now() + 1,
-        type: "ai",
-        content:
+        user_query: inputValue,
+        agent_response:
           "Let me analyze that evidence for you... [This will connect to your CrewAI backend]",
-        timestamp: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
+        created_at: new Date().toISOString(),
       };
-      setMessages((prev) => [...prev, aiResponse]);
+      queryClient.setQueryData(["conversations", gameId], (old) => [
+        ...old,
+        Response,
+      ]);
       setIsLoading(false);
-    }, 4500);
+    }, 1500);
   };
 
   const handleKeyPress = (e) => {
@@ -75,18 +91,16 @@ export default function Dashboard() {
       <header className="bg-black/40 border-b border-cream/20 p-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <h1 className="text-2xl font-bold text-cream">
-              🕵️ Murder Mystery Case #001
-            </h1>
-            <span className="text-cream/70 text-sm">
-              Ravenscroft Manor Murder
-            </span>
+            <h1 className="text-2xl font-bold text-cream">🕵️ {gameName}</h1>
           </div>
 
           <div className="flex items-center space-x-3">
-            <button className="p-2 rounded-lg bg-cream/20 hover:bg-cream/30 transition-colors">
+            <Link
+              href="/settings"
+              className="p-2 rounded-lg bg-cream/20 hover:bg-cream/30 transition-colors"
+            >
               ⚙️
-            </button>
+            </Link>
             <button className="p-2 rounded-lg bg-cream/20 hover:bg-cream/30 transition-colors">
               👤
             </button>
@@ -109,32 +123,86 @@ export default function Dashboard() {
 
           {/* Modern Messages Area - HIGHLIGHTED */}
           <div className="h-96 overflow-y-auto space-y-4 mb-6 p-6 bg-gradient-to-b from-black/20 to-black/40 rounded-2xl border border-cream/20">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${
-                  message.type === "user" ? "justify-end" : "justify-start"
-                }`}
-              >
-                <div
-                  className={`max-w-lg px-5 py-4 rounded-2xl ${
-                    message.type === "user"
-                      ? "bg-gradient-to-r from-cream to-cream text-black"
-                      : "bg-black/70 border border-cream/30 text-white"
-                  }`}
-                >
-                  <div className="text-sm leading-relaxed">
-                    {message.type === "detective" && "🕵️ Detective: "}
-                    {message.type === "ai" && "🤖 AI: "}
-                    {message.content}
-                  </div>
-                  <div className="text-xs opacity-60 mt-2 flex items-center gap-1">
-                    <span>•</span>
-                    <span>{message.timestamp}</span>
-                  </div>
+            {conversationsLoading ? (
+              <div className="flex justify-center py-8">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cream mx-auto mb-2"></div>
+                  <p className="text-white/60 text-sm">
+                    Loading conversation...
+                  </p>
                 </div>
               </div>
-            ))}
+            ) : conversationsError ? (
+              <div className="flex justify-center py-8">
+                <div className="text-center">
+                  <div className="text-red-400 text-2xl mb-2">⚠️</div>
+                  <p className="text-white/60 text-sm">
+                    Failed to load conversation
+                  </p>
+                </div>
+              </div>
+            ) : conversations && conversations.length > 0 ? (
+              conversations.map((conversation, index) => (
+                <div key={index} className="space-y-2">
+                  {/* User Query */}
+                  <div className="flex justify-end">
+                    <div className="max-w-lg px-5 py-4 rounded-2xl bg-gradient-to-r from-cream to-cream text-black ">
+                      <div className="text-sm leading-relaxed">
+                        {conversation.user_query}
+                      </div>
+                      <div className="text-xs opacity-60 mt-2 flex items-center gap-1">
+                        <span>•</span>
+                        <span>
+                          {new Date(conversation.created_at).toLocaleTimeString(
+                            [],
+                            {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              day: "2-digit",
+                              month: "2-digit",
+                            }
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* AI Response */}
+                  <div className="flex justify-start">
+                    <div className="max-w-2xl px-5 py-4 rounded-4xl bg-black/70 border border-cream/30 text-white">
+                      <div className="text-sm leading-relaxed">
+                        {conversation.agent_response}
+                      </div>
+                      <div className="text-xs opacity-60 mt-2 flex items-center gap-1">
+                        <span>•</span>
+                        <span>
+                          {new Date(conversation.created_at).toLocaleTimeString(
+                            [],
+                            {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              day: "2-digit",
+                              month: "2-digit",
+                            }
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="flex justify-center py-8">
+                <div className="text-center">
+                  <div className="text-cream text-4xl mb-4">🕵️</div>
+                  <p className="text-white/60 text-sm">
+                    Welcome to your investigation, Detective.
+                    <br />
+                    What would you like to investigate first?
+                  </p>
+                </div>
+              </div>
+            )}
 
             {isLoading && (
               <div className="flex justify-start">
@@ -208,7 +276,7 @@ export default function Dashboard() {
           </Link>
 
           <Link
-            href="/clues"
+            href="/evidence"
             className="bg-black/40 border border-cream/20 rounded-2xl p-6 hover:bg-black/50 hover:border-cream/40 transition-all group block"
           >
             <div className="text-3xl mb-3 group-hover:scale-105 transition-transform">

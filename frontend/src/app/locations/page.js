@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 const mockLocations = [
   {
@@ -95,25 +96,25 @@ export default function Locations() {
     switch (status) {
       case "crime_scene":
         return {
-          color: "text-red-400 bg-red-500/20 border-red-500",
+          color: "text-shadow bg-shadow/20 border-shadow",
           icon: "☠️",
           label: "Crime Scene",
         };
       case "examined":
         return {
-          color: "text-blue-400 bg-blue-500/20 border-blue-500",
+          color: "text-moonbeam bg-moonbeam/20 border-moonbeam",
           icon: "🔍",
           label: "Examined",
         };
       case "locked":
         return {
-          color: "text-gray-400 bg-gray-500/20 border-gray-500",
+          color: "text-stone bg-stone/20 border-stone",
           icon: "🔒",
           label: "Locked",
         };
       default:
         return {
-          color: "text-yellow-400 bg-yellow-500/20 border-yellow-500",
+          color: "text-moonlight bg-moonlight/20 border-moonlight",
           icon: "❓",
           label: "Unknown",
         };
@@ -130,24 +131,29 @@ export default function Locations() {
   };
 
   return (
-    <div className="min-h-screen bg-mystery-dark text-foreground p-4">
+    <div
+      className="min-h-screen bg-cover bg-center bg-no-repeat text-white p-4"
+      style={{
+        backgroundImage:
+          "linear-gradient(rgba(90, 100, 112, 0), rgba(90, 100, 112, 0)), url('/images/locations.png')",
+      }}
+    >
       {/* Header */}
-      <div className="max-w-7xl mx-auto mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <button className="text-gold hover:text-amber transition-colors">
-              ← Back to Investigation
-            </button>
-            <h1 className="font-mystery-bold text-3xl text-gold">
-              🏠 Locations
-            </h1>
-          </div>
+      <div className="max-w-7xl mx-auto mb-10 pt-4">
+        <div className="grid grid-cols-3 items-center justify-items-center">
+          <Link
+            href="/"
+            className="text-moon-glow hover:text-moonbeam transition-colors justify-self-start"
+          >
+            ← Back to Investigation
+          </Link>
+          <h1 className="font-bold text-2xl text-moon-glow">🏰 Locations</h1>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto">
         {/* Location Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
           {mockLocations.map((location) => {
             const statusInfo = getStatusInfo(location.status);
 
@@ -155,49 +161,32 @@ export default function Locations() {
               <div
                 key={location.id}
                 onClick={() => setSelectedLocation(location)}
-                className={`bg-mystery-medium border rounded-xl p-6 cursor-pointer transition-all duration-200 hover:bg-mystery-light ${
+                className={`bg-black/60 border border-white/10 rounded-3xl p-6 cursor-pointer transition-all duration-200 hover:bg-black/70 hover:scale-105 ${
                   selectedLocation?.id === location.id
-                    ? "border-gold bg-gold/10"
-                    : "border-border-light hover:border-gold"
+                    ? "border-moonbeam bg-moonbeam/50 hover:bg-moonbeam/40"
+                    : "hover:border-moonbeam/30"
                 }`}
               >
-                <div className="text-center mb-4">
-                  <div className="text-4xl mb-2">{location.icon}</div>
-                  <h3 className="font-mystery-bold text-xl text-gold">
+                <div className="text-center mb-3">
+                  <div className="text-3xl mb-3">{location.icon}</div>
+                  <h3 className="font-semibold text-moon-glow mb-1">
                     {location.name}
                   </h3>
                 </div>
 
                 <div
-                  className={`text-center py-2 px-3 rounded-lg text-sm font-medium border mb-3 ${statusInfo.color}`}
+                  className={`text-center py-1 px-3 rounded-lg text-xs font-medium border mb-3 ${statusInfo.color}`}
                 >
                   {statusInfo.icon} {statusInfo.label}
                 </div>
 
-                <div className="text-center text-sm text-muted mb-4">
+                <div className="text-center text-sm text-white/60">
                   {location.cluesFound > 0 ? (
                     <span>{location.cluesFound} Clues Found</span>
                   ) : (
                     <span>Not Searched</span>
                   )}
                 </div>
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleExplore(location);
-                  }}
-                  disabled={location.accessLevel === "restricted"}
-                  className={`w-full py-2 px-4 rounded-lg font-medium transition-colors ${
-                    location.accessLevel === "restricted"
-                      ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-                      : "bg-gold text-mystery-dark hover:bg-amber"
-                  }`}
-                >
-                  {location.accessLevel === "restricted"
-                    ? "🔒 Locked"
-                    : "Explore"}
-                </button>
               </div>
             );
           })}
@@ -205,14 +194,14 @@ export default function Locations() {
 
         {/* Selected Location Details */}
         {selectedLocation && (
-          <div className="bg-mystery-medium border border-border-light rounded-3xl p-8">
+          <div className="bg-black/60 border border-white/10 rounded-3xl p-8">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="font-mystery-bold text-2xl text-gold">
+              <h2 className="font-bold text-xl text-moon-glow">
                 Selected: {selectedLocation.name}
               </h2>
               <button
                 onClick={() => setSelectedLocation(null)}
-                className="text-muted hover:text-foreground transition-colors"
+                className="text-white/60 hover:text-white transition-colors"
               >
                 ✕
               </button>
@@ -221,22 +210,22 @@ export default function Locations() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Description & Clues */}
               <div>
-                <h3 className="font-mystery-bold text-lg text-gold mb-3">
+                <h3 className="font-semibold text-base text-moon-glow mb-3">
                   🔍 Examination Results
                 </h3>
                 <p className="text-foreground mb-6 leading-relaxed">
                   {selectedLocation.description}
                 </p>
 
-                <h3 className="font-mystery-bold text-lg text-gold mb-3">
+                <h3 className="font-semibold text-base text-moon-glow mb-3">
                   🎯 Clues Found Here
                 </h3>
                 {selectedLocation.clues.length > 0 ? (
                   <ul className="space-y-2">
                     {selectedLocation.clues.map((clue, index) => (
                       <li key={index} className="flex items-start space-x-2">
-                        <span className="text-gold">•</span>
-                        <span className="text-foreground">{clue}</span>
+                        <span className="text-moonbeam">•</span>
+                        <span className="text-white">{clue}</span>
                       </li>
                     ))}
                   </ul>
@@ -247,7 +236,7 @@ export default function Locations() {
 
               {/* People Present */}
               <div>
-                <h3 className="font-mystery-bold text-lg text-gold mb-3">
+                <h3 className="font-semibold text-base text-moon-glow mb-3">
                   👥 People Seen Here
                 </h3>
                 <div className="space-y-3">
@@ -257,7 +246,7 @@ export default function Locations() {
                       className="p-3 bg-mystery-light border border-border rounded-lg"
                     >
                       <div className="flex justify-between items-start mb-1">
-                        <span className="font-medium text-gold">
+                        <span className="font-medium text-moonbeam">
                           {person.name}
                         </span>
                         <span className="text-sm text-muted">
@@ -278,7 +267,7 @@ export default function Locations() {
                     className={`w-full py-3 px-6 rounded-lg font-medium transition-colors ${
                       selectedLocation.accessLevel === "restricted"
                         ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-                        : "bg-gold text-mystery-dark hover:bg-amber"
+                        : "bg-moonlight text-white hover:bg-shadow"
                     }`}
                   >
                     {selectedLocation.accessLevel === "restricted"

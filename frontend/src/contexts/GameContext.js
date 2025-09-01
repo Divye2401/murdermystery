@@ -17,6 +17,7 @@ export const useGame = () => {
 export function GameProvider({ children }) {
   const { user } = useAuth();
   const [currentGameId, setCurrentGameId] = useState(null);
+  const [currentGamename, setCurrentGamename] = useState(null);
 
   const fetchCurrentGame = async () => {
     try {
@@ -34,6 +35,7 @@ export function GameProvider({ children }) {
 
       if (data) {
         setCurrentGameId(data.id);
+        setCurrentGamename(data.title);
         console.log(data.title);
       }
     } catch (error) {
@@ -87,6 +89,7 @@ export function GameProvider({ children }) {
 
   const value = {
     currentGameId,
+    currentGamename,
     setGame,
     fetchCurrentGame,
   };
