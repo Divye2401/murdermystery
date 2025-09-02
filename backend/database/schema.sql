@@ -116,24 +116,37 @@ ALTER TABLE interactions ENABLE ROW LEVEL SECURITY;
 
 -- Basic RLS policies (you can modify these based on your auth setup)
 CREATE POLICY "Users can access their own games" ON games FOR ALL USING (auth.uid()::text = user_id);
-CREATE POLICY "Users can access characters in their games" ON characters FOR ALL USING (
+-- Grant permissions to replication role for Realtime
+GRANT SELECT ON TABLE public.characters TO supabase_replication_admin;
+
+CREATE POLICY "Users can access characters in their games" ON characters FOR ALL 
+TO authenticated, supabase_replication_admin
+USING (
     EXISTS (SELECT 1 FROM games WHERE games.id = characters.game_id AND games.user_id = auth.uid()::text)
-    OR auth.role() = 'service_role'
 );
 
-CREATE POLICY "Users can access locations in their games" ON locations FOR ALL USING (
+GRANT SELECT ON TABLE public.locations TO supabase_replication_admin;
+
+CREATE POLICY "Users can access locations in their games" ON locations FOR ALL 
+TO authenticated, supabase_replication_admin
+USING (
     EXISTS (SELECT 1 FROM games WHERE games.id = locations.game_id AND games.user_id = auth.uid()::text)
-    OR auth.role() = 'service_role'
 );
 
-CREATE POLICY "Users can access clues in their games" ON clues FOR ALL USING (
+GRANT SELECT ON TABLE public.clues TO supabase_replication_admin;
+
+CREATE POLICY "Users can access clues in their games" ON clues FOR ALL 
+TO authenticated, supabase_replication_admin
+USING (
     EXISTS (SELECT 1 FROM games WHERE games.id = clues.game_id AND games.user_id = auth.uid()::text)
-    OR auth.role() = 'service_role'
 );
 
-CREATE POLICY "Users can access timeline events in their games" ON timeline_events FOR ALL USING (
+GRANT SELECT ON TABLE public.timeline_events TO supabase_replication_admin;
+
+CREATE POLICY "Users can access timeline events in their games" ON timeline_events FOR ALL 
+TO authenticated, supabase_replication_admin
+USING (
     EXISTS (SELECT 1 FROM games WHERE games.id = timeline_events.game_id AND games.user_id = auth.uid()::text)
-    OR auth.role() = 'service_role'
 );
 CREATE POLICY "Users can access interactions in their games" ON interactions FOR ALL USING (
     EXISTS (SELECT 1 FROM games WHERE games.id = interactions.game_id AND games.user_id = auth.uid()::text)

@@ -10,10 +10,7 @@ export function useDatabaseListener() {
   const { currentGameId } = useGame();
 
   const handleCharacterChange = (payload) => {
-    //Payload has fields eventType, new, old, schema, table, filter
-    console.log("Character changddddde:", payload);
-    console.log("Event type:", payload.eventType);
-
+    console.log("Character change:", payload);
     if (payload.eventType === "UPDATE") {
       toast("👤 Character information updated", {
         icon: "📝",
@@ -59,8 +56,6 @@ export function useDatabaseListener() {
   useEffect(() => {
     if (!user?.id || !currentGameId) return;
 
-    console.log("Setting up Realtime for game:", currentGameId);
-
     const gameChannel = supabase
       .channel(`game-${currentGameId}`)
       .on(
@@ -105,7 +100,7 @@ export function useDatabaseListener() {
       .subscribe((status) => {
         console.log("Realtime subscription status:", status);
         if (status === "SUBSCRIBED") {
-          console.log("🎉 Realtime connected!");
+          console.log("🎉 Realtime connected! for game:", currentGameId);
         }
       });
 
