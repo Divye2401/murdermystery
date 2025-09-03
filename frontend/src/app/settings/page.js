@@ -1,65 +1,82 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+
+import { fetchUserGames } from "@/lib/helpers";
 import { auth } from "@/lib/supabase";
 
-const mockGames = [
-  {
-    id: 1,
-    title: "The Blackwood Manor Mystery",
-    date: "March 15, 2024",
-    status: "active",
-  },
-  {
-    id: 2,
-    title: "Death at the Opera House",
-    date: "March 10, 2024",
-    status: "completed",
-  },
-  {
-    id: 3,
-    title: "The Poisoned Chalice",
-    date: "March 8, 2024",
-    status: "paused",
-  },
-  {
-    id: 4,
-    title: "Murder on the Orient Express",
-    date: "March 5, 2024",
-    status: "completed",
-  },
-];
-
 export default function Settings() {
-  const [selectedGame, setSelectedGame] = useState(1);
+  const { user, checkingUser } = useAuth();
+  const [selectedGame, setSelectedGame] = useState(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const router = useRouter();
 
+  // Fetch user games data
+  const {
+    data: userGames,
+    isLoading: gamesLoading,
+    error: gamesError,
+  } = useQuery({
+    queryKey: ["user_games", user?.id],
+    queryFn: () => fetchUserGames(user.id),
+    enabled: !!user && !checkingUser,
+    staleTime: 30 * 1000, // 30 seconds
+    refetchOnWindowFocus: false,
+  });
+
+  // Protect this route - redirect to login if not authenticated
+  useEffect(() => {
+    if (!checkingUser && !user) {
+      router.push("/login");
+    }
+  }, [user, checkingUser, router]);
+
+  // Set first game as selected when games load
+  useEffect(() => {
+    if (userGames && userGames.length > 0 && !selectedGame) {
+      setSelectedGame(userGames.find((game) => game.is_active).id);
+    }
+  }, [userGames, selectedGame]);
+
   const getStatusInfo = (status) => {
     switch (status) {
-      case "active":
+      case "IN_PROGRESS":
         return {
-          color: "text-brass-warm  ",
+          color: "text-brass-warm",
           icon: "🎮",
-          label: "Active",
+          label: "In Progress",
         };
-      case "completed":
+      case "DONE":
         return {
-          color: "text-study-paper ",
+          color: "text-study-paper",
           icon: "✅",
           label: "Completed",
         };
-      case "paused":
+      case "INIT":
         return {
-          color: "text-wood-light ",
-          icon: "⏸️",
-          label: "Paused",
+          color: "text-wood-light",
+          icon: "🔄",
+          label: "Initializing",
+        };
+      case "CAST_READY":
+        return {
+          color: "text-brass-warm",
+          icon: "👥",
+          label: "Cast Ready",
+        };
+      case "WORLD_READY":
+        return {
+          color: "text-wood-light",
+          icon: "🌍",
+          label: "World Ready",
         };
       default:
         return {
-          color: "text-leather-dark ",
+          color: "text-leather-dark",
           icon: "❓",
           label: "Unknown",
         };
@@ -83,6 +100,70 @@ export default function Settings() {
       setIsLoggingOut(false);
     }
   };
+
+  // Show loading while checking authentication
+  if (checkingUser) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black text-white">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-moon-glow mx-auto mb-4"></div>
+          <p className="text-moon-glow">Loading user session...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if no user (will redirect)
+  if (!user) {
+    return null;
+  }
+
+  // Show loading while fetching games
+  if (gamesLoading) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center bg-cover bg-center bg-no-repeat text-white"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.6)), url('/images/settings.png')",
+        }}
+      >
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-moon-glow mx-auto mb-4"></div>
+          <p className="text-moon-glow">Loading games...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (gamesError) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center bg-cover bg-center bg-no-repeat text-white"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.6)), url('/images/settings.png')",
+        }}
+      >
+        <div className="text-center">
+          <div className="text-red-400 text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-red-400 mb-2">
+            Error Loading Games
+          </h2>
+          <p className="text-gray-300 mb-4">
+            {gamesError?.message || "Failed to load games data"}
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-3 bg-red-500 hover:bg-red-600 rounded-lg transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -114,46 +195,48 @@ export default function Settings() {
 
           {/* Games Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 items-start">
-            {mockGames.map((game) => {
-              const statusInfo = getStatusInfo(game.status);
+            {userGames &&
+              userGames.map((game) => {
+                const statusInfo = getStatusInfo(game.status);
 
-              return (
-                <div
-                  key={game.id}
-                  onClick={() => handleGameSwitch(game.id)}
-                  className={`bg-black/60 border border-white/10 rounded-2xl p-6 cursor-pointer transition-all duration-200 hover:bg-black/70 hover:scale-105 ${
-                    selectedGame === game.id
-                      ? "border-brass-warm bg-brass-warm/20 hover:bg-brass-warm/10"
-                      : "hover:border-brass-warm/30"
-                  }`}
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-study-paper mb-1">
-                        {game.title}
-                      </h3>
-                      <p className="text-white/60 text-sm">
-                        Started: {game.date}
-                      </p>
+                return (
+                  <div
+                    key={game.id}
+                    onClick={() => handleGameSwitch(game.id)}
+                    className={`bg-black/60 border border-white/10 rounded-2xl p-6 cursor-pointer transition-all duration-200 hover:bg-black/70 hover:scale-105 ${
+                      selectedGame === game.id
+                        ? "border-brass-warm bg-brass-warm/20 hover:bg-brass-warm/10"
+                        : "hover:border-brass-warm/30"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-study-paper mb-1">
+                          {game.title}
+                        </h3>
+                        <p className="text-white/60 text-sm">
+                          Started:{" "}
+                          {new Date(game.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+
+                      <div
+                        className={`py-1 px-3 rounded-lg text-xs font-medium  ${statusInfo.color}`}
+                      >
+                        {statusInfo.icon} {statusInfo.label}
+                      </div>
                     </div>
 
-                    <div
-                      className={`py-1 px-3 rounded-lg text-xs font-medium  ${statusInfo.color}`}
-                    >
-                      {statusInfo.icon} {statusInfo.label}
-                    </div>
+                    {selectedGame === game.id && (
+                      <div className="mt-4 pt-4 border-t border-white/10">
+                        <button className="w-full py-2 px-4 bg-brass-warm text-white rounded-lg hover:bg-wood-light transition-colors font-medium">
+                          Switch to This Case
+                        </button>
+                      </div>
+                    )}
                   </div>
-
-                  {selectedGame === game.id && (
-                    <div className="mt-4 pt-4 border-t border-white/10">
-                      <button className="w-full py-2 px-4 bg-brass-warm text-white rounded-lg hover:bg-wood-light transition-colors font-medium">
-                        Switch to This Case
-                      </button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         </div>
 

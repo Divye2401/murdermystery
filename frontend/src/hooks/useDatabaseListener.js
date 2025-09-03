@@ -10,13 +10,11 @@ export function useDatabaseListener() {
   const { currentGameId } = useGame();
 
   const handleCharacterChange = (payload) => {
-    console.log("Character change:", payload);
     if (payload.eventType === "UPDATE") {
       toast("👤 Character information updated", {
         icon: "📝",
       });
     } else if (payload.eventType === "INSERT") {
-      console.log("New character added:", payload.new);
       toast("👤 New character added", {
         icon: "📝",
       });
@@ -24,8 +22,6 @@ export function useDatabaseListener() {
   };
 
   const handleClueChange = (payload) => {
-    console.log("Clue change:", payload);
-
     if (payload.eventType === "INSERT") {
       toast.success("🔍 New clue discovered!", {
         duration: 5000,
@@ -34,8 +30,6 @@ export function useDatabaseListener() {
   };
 
   const handleTimelineChange = (payload) => {
-    console.log("Timeline change:", payload);
-
     if (payload.eventType === "INSERT") {
       toast("⏰ Timeline updated", {
         icon: "📅",
@@ -44,8 +38,6 @@ export function useDatabaseListener() {
   };
 
   const handleLocationChange = (payload) => {
-    console.log("Location change:", payload);
-
     if (payload.eventType === "UPDATE") {
       toast("🔍 New location discovered!", {
         duration: 5000,
