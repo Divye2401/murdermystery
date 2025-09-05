@@ -31,7 +31,8 @@ CREATE TABLE characters (
     secrets JSONB DEFAULT '[]',
     relationships JSONB DEFAULT '{}',
     metadata JSONB DEFAULT '{}',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    image_url TEXT DEFAULT NULL
 );
 
 -- 3. Locations table
@@ -44,7 +45,8 @@ CREATE TABLE locations (
     connected_locations TEXT[] DEFAULT '{}',
     atmosphere TEXT DEFAULT 'neutral',
     metadata JSONB DEFAULT '{}',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    image_url TEXT DEFAULT NULL
 );
 
 -- 4. Clues table
@@ -61,7 +63,8 @@ CREATE TABLE clues (
     points_to TEXT[] DEFAULT '{}', -- Points to character/location names
     metadata JSONB DEFAULT '{}',
     discovered_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    image_url TEXT DEFAULT NULL
 );
 
 -- 5. Timeline events table

@@ -9,6 +9,7 @@ from agents.gamemaster import handle_query
 from agents.updatecrew import analyze_for_updates
 import asyncio
 from agents.summarizer import summarize_game_state
+from agents.imagegen import generate_character_images, generate_location_images, generate_clue_images
 
 router = APIRouter()
 
@@ -137,6 +138,14 @@ async def create_game(game_request: dict, user_id: str):
             }
             supabase.table("timeline_events").insert(event_record).execute()
         
+
+        
+        # 🎨 START BACKGROUND IMAGE GENERATION (DON'T AWAIT)
+        asyncio.create_task(bg_generate_images(game_id, game_data.get("characters", []), "characters"))
+        asyncio.create_task(bg_generate_images(game_id, game_data.get("locations", []), "locations"))
+        asyncio.create_task(bg_generate_images(game_id, game_data.get("clues", []), "clues"))
+
+        
         return {
             "message": "Game generated and stored successfully",
             "game_id": game_id,
@@ -199,11 +208,76 @@ async def query_game(game_id: str, query: dict):
         raise HTTPException(500, f"Failed to handle query: {str(e)}")
 
 
+#------------------------------------------------------------------------------------------------
+
+async def bg_generate_images(game_id: str, items: list, item_type: str):
+    """Background process for generating images for characters, locations, or clues."""
+    try:
+        print(f"🎨 Starting background {item_type} image generation for game {game_id}")
+        
+        # Generate images based on type
+        urls = {}
+        if item_type == "characters":
+            urls = await generate_character_images(items, game_id)
+        elif item_type == "locations":
+            urls = await generate_location_images(items, game_id)
+        elif item_type == "clues":
+            urls = await generate_clue_images(items, game_id)
+        else:
+            print(f"❌ Unknown item type: {item_type}")
+            return False
+
+        
+        # Update database with generated image URLs
+        for item_name, image_url in urls.items():
+            if image_url:
+                await update_item_image(game_id, item_name, item_type, image_url)
+                print(f"✅ Updated {item_name} with image")
+            else:
+                print(f"❌ Failed to generate image for {item_name}")
+                
+        print(f"🎨 Completed {item_type} image generation for game {game_id}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ ERROR in bg_generate_{item_type}_images: {str(e)}")
+        return False
+
+async def update_item_image(game_id: str, item_name: str, item_type: str, image_url: str):
+    """Update character record with generated image URL."""
+    try:
+        supabase = get_supabase_client()
+        if item_type == "characters":
+            table = "characters"
+        elif item_type == "locations":
+            table = "locations"
+        elif item_type == "clues":
+            table = "clues"
+
+        if(item_type != "clues"):
+            result = supabase.table(table).update(
+            {"image_url": image_url}
+        ).eq("game_id", game_id).eq("name", item_name).execute()
+        else:
+            result = supabase.table(table).update(
+                {"image_url": image_url}
+            ).eq("game_id", game_id).eq("title", item_name).execute()
+        
+    except Exception as e:
+        print(f"❌ Error in update_character_image: {str(e)}")
+
+
+#------------------------------------------------------------------------------------------------
+
+
+
 async def bg_process(game_id: str, query_text: str, result: str):
     """Background process for analyzing for updates and storing game update."""
     update_result = await analyze_for_updates(game_id, query_text, result)
     print("Gotten Analysis")
     await store_game_update(game_id, update_result)
+
+
 
 async def store_game_update(game_id: str, update_result: str):
     """Store game update in database."""

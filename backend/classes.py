@@ -1,9 +1,14 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, Literal
 from database.client import get_supabase_client
 from crewai.tools import BaseTool
 from typing import Type
 import json
+import openai
+import requests
+import os
+from huggingface_hub import InferenceClient
+import io
 
 class Character(BaseModel):
     """Character data for agent creation - matches database schema."""
@@ -101,6 +106,11 @@ class AllCluesInput(BaseModel):
 class AllLocationDataInput(BaseModel):
     game_id: str = Field(..., description="The game ID to search in")
 
+class ImageGenerationInput(BaseModel):
+    prompt: str = Field(description="Detailed image generation prompt for DALL-E")
+    image_type: Literal["character", "location" , "clue"] = Field(description="Type of image being generated")
+    subject_name: str = Field(description="Name of the character or location being generated")
+    game_id: str = Field(..., description="The game ID to create the image for")
 
 
 
@@ -117,6 +127,11 @@ class GameUpdateAnalysis(BaseModel):
     updates: list[GameUpdate] = Field(default=[], description="List of database updates to perform")
     has_changes: bool = Field(..., description="Whether any game state changes occurred")
     summary: str = Field(..., description="Brief summary of what changed in the game")
+
+
+class ImageGenerationOutput(BaseModel):
+    name: str = Field(..., description="Name of the resource being generated")
+    image_url: str = Field(..., description="URL of the generated image")   
 
 
 # Database tools for Master Agent
@@ -313,6 +328,127 @@ class GetAllLocationDataTool(BaseTool):
             return "No location data found for this game"
         except Exception as e:
             return f"Error retrieving location: {str(e)}"
+
+
+
+class ImageTool(BaseTool):  # TODO: Rename to DalleImageTool
+    name: str = "generate_mystery_image"
+    description: str = "Generate atmospheric images for murder mystery characters and locations using DALL-E 3"
+    args_schema: Type[BaseModel] = ImageGenerationInput
+    
+    def _run(self, prompt: str, image_type: str, subject_name: str, game_id: str) -> str:
+        """Generate image using DALL-E 3 via OpenAI and upload to Supabase Storage."""
+        try:
+
+
+            safe_name = f"{subject_name.lower().replace(" ", "-").replace("'", "")}.png"
+            filename = f"{image_type}s/{game_id}/{safe_name}"
+            supabase = get_supabase_client()
+
+            #check if image already exists
+            folder = f"{image_type}s/{game_id}"
+            files = supabase.storage.from_("game-images2").list(folder)
+            
+
+            if any(f["name"] == safe_name for f in files):
+                print(f"✅ Image already exists: {filename}")
+                public_url = supabase.storage.from_("game-images2").get_public_url(filename)
+                return public_url
+
+
+
+            
+            print(f"🎨 Generating {image_type} image for: {subject_name}")
+            
+            # DALL-E 3 via OpenAI API
+            print(f"🎯 Calling DALL-E API")
+            
+            # Get OpenAI API key
+            openai_key = os.getenv("OPENAI_API_KEY")
+            if not openai_key:
+                print("❌ OPENAI_API_KEY not found in environment variables")
+                return None
+            
+            openai.api_key = openai_key
+            
+            # Call DALL-E 3
+            response = openai.images.generate(
+                model="dall-e-3",
+                prompt=prompt,
+                size="1024x1024",
+                quality="standard",
+                n=1
+            )
+            
+            print(f"✅ DALL-E generated image successfully")
+            
+            # Download image from temporary URL
+            temp_url = response.data[0].url
+            img_response = requests.get(temp_url, timeout=30)
+            img_response.raise_for_status()
+            image_data = img_response.content
+            
+            # # COMMENTED FLUX CODE:
+            # # Get HuggingFace API token
+            # hf_token = os.getenv("HUGGINGFACE_API_TOKEN")
+            # if not hf_token:
+            #     print("❌ HUGGINGFACE_API_TOKEN not found in environment variables")
+            #     return None
+            # 
+            # # Call Flux via Hugging Face Inference API
+            # print(f"🎯 Calling Flux API ")
+            # client = InferenceClient(api_key=hf_token)
+            # image = client.text_to_image(
+            #     prompt,
+            #     model="black-forest-labs/FLUX.1-dev",
+            #     width=1024,
+            #     height=1024
+            # )
+            # 
+            # print(f"✅ Flux generated image successfully")
+            # 
+            # # Convert PIL Image to bytes for upload
+            # img_bytes = io.BytesIO()
+            # image.save(img_bytes, format='PNG')
+            # image_data = img_bytes.getvalue()
+            
+            # Upload directly to Supabase Storage
+            permanent_url = self._upload_to_supabase(image_data, filename, subject_name)
+            
+            print(f"Returning permanent URL: {permanent_url}")
+            return permanent_url
+            
+        except Exception as e:
+            print(f"❌ Flux Error for {subject_name}: {str(e)}")
+            return None
+    
+    def _upload_to_supabase(self, image_data: bytes, filename: str, subject_name: str) -> str:
+        """Upload image bytes directly to Supabase Storage bucket."""
+        try:
+            
+            
+            # Upload to Supabase Storage
+            supabase = get_supabase_client()
+            try:
+                storage_response = supabase.storage.from_("game-images2").upload(
+                filename, 
+                image_data, 
+                {"content-type": "image/png"}
+            )
+                print(f"✅ Uploaded image in bucket")
+            except Exception as e:
+                    print(f"❌ Storage upload error: {str(e)}")
+                    return None
+            
+            # Get public URL
+            public_url = supabase.storage.from_("game-images2").get_public_url(filename)
+            return public_url
+            
+        except Exception as e:
+            print(f"❌ Upload error for {subject_name}: {str(e)}")
+            return None
+
+
 
 
 
