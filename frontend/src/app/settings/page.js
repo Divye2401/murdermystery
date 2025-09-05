@@ -5,12 +5,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
-
+import { useGame } from "@/contexts/GameContext";
 import { fetchUserGames } from "@/lib/helpers";
 import { auth } from "@/lib/supabase";
 
 export default function Settings() {
   const { user, checkingUser } = useAuth();
+  const { setGame } = useGame();
   const [selectedGame, setSelectedGame] = useState(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const router = useRouter();
@@ -81,12 +82,6 @@ export default function Settings() {
           label: "Unknown",
         };
     }
-  };
-
-  const handleGameSwitch = (gameId) => {
-    setSelectedGame(gameId);
-    // TODO: Implement actual game switching logic
-    console.log(`Switching to game ${gameId}`);
   };
 
   const handleLogout = async () => {
@@ -202,7 +197,7 @@ export default function Settings() {
                 return (
                   <div
                     key={game.id}
-                    onClick={() => handleGameSwitch(game.id)}
+                    onClick={() => setSelectedGame(game.id)}
                     className={`bg-black/60 border border-white/10 rounded-2xl p-6 cursor-pointer transition-all duration-200 hover:bg-black/70 hover:scale-105 ${
                       selectedGame === game.id
                         ? "border-brass-warm bg-brass-warm/20 hover:bg-brass-warm/10"
@@ -229,7 +224,10 @@ export default function Settings() {
 
                     {selectedGame === game.id && (
                       <div className="mt-4 pt-4 border-t border-white/10">
-                        <button className="w-full py-2 px-4 bg-brass-warm text-white rounded-lg hover:bg-wood-light transition-colors font-medium">
+                        <button
+                          className="w-full py-2 px-4 bg-brass-warm text-white rounded-lg hover:bg-wood-light transition-colors font-medium"
+                          onClick={() => setGame(game.id)}
+                        >
                           Switch to This Case
                         </button>
                       </div>
