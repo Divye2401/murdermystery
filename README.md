@@ -1,10 +1,13 @@
 # 🕵️ Murder Mystery AI Game
 
 An immersive murder mystery game powered by **Agentic AI** that creates dynamic, personalized detective experiences. Players investigate crimes, interrogate suspects, and uncover clues in a world where every decision shapes the narrative through intelligent AI agents.
-<br>
+
+<br />
+<br />
+
 ![Game Dashboard](https://github.com/user-attachments/assets/8a37c340-b8e1-46fe-9504-fb08a076ec10)
 
-
+<br />
 
 ## 🤖 **Agentic AI Architecture**
 
@@ -85,8 +88,9 @@ graph TD
 - **Multiple Investigation Paths**: No single solution path - explore your way
 - **Real-time State Updates**: Game world responds immediately to your actions
 
-![Character Interaction](<img width="1673" height="837" alt="image" src="https://github.com/user-attachments/assets/88733299-badd-497e-b444-99896f2600e2" />)
+![Character Interaction](https://github.com/user-attachments/assets/f85dd1b0-f712-4df8-a901-5b123dd32038)
 
+<br />
 
 ### **🤖 Advanced AI Features**
 
@@ -101,8 +105,12 @@ graph TD
 - **Atmospheric Audio**: Immersive soundscapes that adapt to different game areas
 - **Responsive Design**: Seamless experience across desktop and mobile devices
 - **Dark Mystery Theme**: Carefully crafted UI that enhances the detective atmosphere
+  
+<br />
 
-![Locations View](./images/locations-view.png)
+![Locations View](https://github.com/user-attachments/assets/51e6cb1c-84c0-4667-97dd-fbbdf75100bd)
+
+<br />
 
 ## 🛠️ **Technology Stack**
 
@@ -126,7 +134,7 @@ graph TD
 
 - **GPT-4** - Advanced language model for natural conversations
 - **DALL-E 3** - AI image generation with safety protocols
-- **CrewAI Framework** - Agent orchestration and task management
+- **CrewAI Framework** - Agent orchestration and task management in a heirarchical and sequential setting
 - **Custom Prompt Engineering** - Optimized prompts for mystery game context
 
 ## 🚀 **Getting Started**
