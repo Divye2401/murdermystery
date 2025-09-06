@@ -28,9 +28,9 @@ def create_murder_mystery_game(title: str, description: str, character_count: st
         - Character Count: {character_count}
 
         REQUIREMENTS:
-        1. Create {character_count} unique characters with distinct personalities, backgrounds, and motives (The victim has to be mandatorily included in the character count)
-        2. Designate exactly ONE character as the killer (is_killer: true)
-        3. Designate exactly ONE character as the victim (is_victim: true)
+        1. Create {character_count} unique characters with distinct personalities, backgrounds, and motives
+        2. Designate exactly ONE character as the killer (is_killer: true and is_alive: true)
+        3. Designate exactly ONE character as the victim (is_victim: true and is_alive: false)
         4. Create 5-8 atmospheric locations that fit the setting
         5. Designate exactly ONE location as the murder location (is_murder_location: true)
         6. Generate 6-8 clues of varying importance (significance_level 1-5)
@@ -39,14 +39,15 @@ def create_murder_mystery_game(title: str, description: str, character_count: st
         9. Make sure clues point to different characters to create red herrings
         
         CHARACTER GUIDELINES:
-        - Victim cannot be the killer, Victim is always dead(is_alive: false), Killer is always alive(is_alive: true)
+        - Victim cannot be the killer.
+        - Rest of the characters are always alive(is_alive: true and is_victim: false and is_killer: false)
         - Each character needs a unique lie_policy: honest, evasive, deceptive, or pathological
         - Give characters realistic secrets and relationships
         - The killer should have a clear motive and opportunity
         - Create believable alibis and contradictions
-        - Have 1-2 observations of the environment/other characters
+        - Have 1-2 observations related to the environment/other characters
         - Make sure the relationships clearly mention the characters by their names and not by reference to the character type
-        - IMPORTANT: Also include the victim character within the characters list 
+        - The character profile should be detailed enough to create a believable story.
 
         
         CLUE GUIDELINES:

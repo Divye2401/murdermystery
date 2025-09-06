@@ -7,18 +7,18 @@ import { toast } from "react-hot-toast";
 
 export function useDatabaseListener() {
   const { user } = useAuth();
-  const { currentGameId } = useGame();
+  const { currentGameId, resetGame } = useGame();
 
   const handleCharacterChange = (payload) => {
     if (payload.eventType === "UPDATE") {
       const name = payload.new.name;
-      toast(`👤 ${name} information updated`, {
+      toast.success(`👤 ${name} information updated`, {
         id: "character-updated",
         icon: "📝",
       });
     } else if (payload.eventType === "INSERT") {
       const name = payload.new.name;
-      toast(`👤 New character added: ${name}`, {
+      toast.success(`👤 New character added: ${name}`, {
         id: "character-inserted",
         icon: "📝",
       });
@@ -51,6 +51,25 @@ export function useDatabaseListener() {
     }
   };
 
+  const handleGameChange = (payload) => {
+    if (payload.eventType === "UPDATE") {
+      const newStatus = payload.new?.status;
+
+      if (newStatus === "DONE") {
+        toast.success(
+          "🎉 Mystery Solved! Game Complete! Game will be reset in 2 minutes",
+          {
+            duration: 5000,
+            id: "game-completed",
+          }
+        );
+        setTimeout(() => {
+          resetGame();
+        }, 1000 * 60 * 2);
+      }
+    }
+  };
+
   useEffect(() => {
     if (!user?.id || !currentGameId) {
       return;
@@ -61,8 +80,8 @@ export function useDatabaseListener() {
       gameId: currentGameId,
     });
 
-    const gameChannel = supabase
-      .channel(`game-${currentGameId}-debug`)
+    const gameDataChannel = supabase
+      .channel(`game-data-${currentGameId}`)
       .on(
         "postgres_changes",
         {
@@ -122,22 +141,40 @@ export function useDatabaseListener() {
         }
         if (status === "SUBSCRIBED") {
           console.log("🎉 Realtime connected! for game:", currentGameId);
+        }
+      });
 
-          // Test if ANY postgres changes are being received
-          console.log("🔍 Testing realtime - insert a test record now!");
-        } else if (status === "CHANNEL_ERROR") {
-          console.error("❌ Channel error - replication likely broken");
-        } else if (status === "TIMED_OUT") {
-          console.error("⏰ Subscription timed out");
-        } else if (status === "CLOSED") {
-          console.warn("🔒 Channel closed");
+    // Separate channel for games table
+    const gameStatusChannel = supabase
+      .channel(`game-status-${currentGameId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "games",
+          filter: `id=eq.${currentGameId}`,
+        },
+        (payload) => {
+          console.log("🎯 GAMES change received:", payload);
+          handleGameChange(payload);
+        }
+      )
+      .subscribe((status, err) => {
+        if (err) {
+          console.error("❌ Game status subscription error:", err);
+        }
+        if (status === "SUBSCRIBED") {
+          console.log("🎉 Game status realtime connected!");
         }
       });
 
     // Cleanup
     return () => {
-      supabase.removeChannel(gameChannel);
+      supabase.removeChannel(gameDataChannel);
+      supabase.removeChannel(gameStatusChannel);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, currentGameId]);
 }
 

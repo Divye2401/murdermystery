@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "./AuthContext";
+import { toast } from "react-hot-toast";
 
 const GameContext = createContext({});
 
@@ -26,17 +27,22 @@ export function GameProvider({ children }) {
         .select("*")
         .eq("user_id", user.id)
         .eq("is_active", true)
+        .eq("status", "CAST_READY")
         .single();
-
-      if (error) {
-        console.error("Error fetching active game:", error);
-        return;
-      }
 
       if (data) {
         setCurrentGameId(data.id);
         setCurrentGamename(data.title);
         console.log(data.title);
+      } else {
+        console.log("No active game found, setting current game id to null");
+        setCurrentGameId(null);
+        setCurrentGamename(null);
+      }
+
+      if (error) {
+        console.error("Error fetching active game:", error);
+        return;
       }
     } catch (error) {
       console.error("Error in fetchActiveGame:", error);
@@ -87,11 +93,18 @@ export function GameProvider({ children }) {
     }
   };
 
+  const resetGame = async () => {
+    setCurrentGameId(null);
+    setCurrentGamename(null);
+    toast.success("Game reset successfully");
+  };
+
   const value = {
     currentGameId,
     currentGamename,
     setGame,
     fetchCurrentGame,
+    resetGame,
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

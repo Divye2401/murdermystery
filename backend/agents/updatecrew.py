@@ -85,13 +85,14 @@ async def analyze_for_updates(game_id: str, player_query: str, ai_response: str)
         - Provide data to insert/update/delete (Data must include id always)
         - Give clear reasoning based on your tool checks
         
-        
-        
-        Only provide existing columns in the database, do not make up columns.
-        If providing Newclues, make sure to generate an image for the clue using generate_mystery_image.
-        If providing timeline events, make sure event_time is the latest chronologically.
+        Check the Important section below before providing your response:
+        IMPORTANT: If providing Newclues, make sure to generate an image for the clue using generate_mystery_image.
+        IMPORTANT: If providing timeline events, make sure event_time is the latest chronologically.
         IMPORTANT: Provide data strictly in the format of GameUpdateAnalysis, nothing extra.
-        IMPORTANT: Use your database tools to avoid duplicate updates/inserts!
+        IMPORTANT: Use your database tools to avoid duplicate updates/inserts (Do NOT INSERT if it already exists, JUST UPDATE)!
+        IMPORTANT: Only provide existing columns in the database, do not make up columns.
+
+       
         """,
         expected_output="Structured analysis of required database updates in the format of GameUpdateAnalysis",
         agent=update_agent,

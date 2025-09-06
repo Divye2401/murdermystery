@@ -78,6 +78,7 @@ class GameSetup(BaseModel):
     clues: list[Clue] = Field(description="List of all clues in the game (5-10 clues recommended)")
     timeline_events: list[TimelineEvent] = Field(description="Chronological sequence of events that occurred")
     opening_summary: str = Field(description="A one paragraph summary of the game setting the scene for the narrative")
+    
 
 
 

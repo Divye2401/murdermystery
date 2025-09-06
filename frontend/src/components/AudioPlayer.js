@@ -24,11 +24,6 @@ export default function AudioPlayer({ src, autoPlay = false, volume = 0.3 }) {
 
       document.addEventListener("click", handleUserInteraction);
       document.addEventListener("keydown", handleUserInteraction);
-
-      return () => {
-        document.removeEventListener("click", handleUserInteraction);
-        document.removeEventListener("keydown", handleUserInteraction);
-      };
     }
   }, [autoPlay]);
 

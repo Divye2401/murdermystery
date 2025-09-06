@@ -270,17 +270,30 @@ export default function Characters() {
                 <ul className="space-y-2 mb-4">
                   {selectedCharacter.personality &&
                   Object.keys(selectedCharacter.personality).length > 0
-                    ? Object.keys(selectedCharacter.personality).map(
-                        (trait) => (
-                          <li
-                            key={trait}
-                            className="flex items-start space-x-2"
-                          >
-                            <span className="text-rose-gold">•</span>
-                            <span className="text-white italic">{trait}</span>
-                          </li>
+                    ? Object.values(selectedCharacter.personality)[0] instanceof
+                      Array
+                      ? Object.values(selectedCharacter.personality)
+                          .flat()
+                          .map((trait) => (
+                            <li
+                              key={trait}
+                              className="flex items-start space-x-2"
+                            >
+                              <span className="text-rose-gold">•</span>
+                              <span className="text-white italic">{trait}</span>
+                            </li>
+                          ))
+                      : Object.keys(selectedCharacter.personality).map(
+                          (trait) => (
+                            <li
+                              key={trait}
+                              className="flex items-start space-x-2"
+                            >
+                              <span className="text-rose-gold">•</span>
+                              <span className="text-white italic">{trait}</span>
+                            </li>
+                          )
                         )
-                      )
                     : "DEFAULT"}
                 </ul>
 

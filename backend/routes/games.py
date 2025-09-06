@@ -53,7 +53,7 @@ async def create_game(game_request: dict, user_id: str):
             "status": "CAST_READY",
             "created_at": datetime.now().isoformat(),
             "updated_at": datetime.now().isoformat(),
-            "opening_summary": opening_summary,
+            "opening_summary": game_data.get("opening_summary", ""),
             "is_active": True,
             "in_progress": True,
         }
@@ -193,6 +193,8 @@ async def query_game(game_id: str, query: dict):
         # Get AI response with conversation context
         result = handle_query(game_id, query_text, summary)
         
+
+        
         # Log this interaction
         supabase.table("interactions").insert({
             "game_id": game_id,
@@ -203,6 +205,8 @@ async def query_game(game_id: str, query: dict):
         
         # Analyze for updates and store game update in background DONT AWAIT THIS
         asyncio.create_task(bg_process(game_id, query_text, result)) 
+        if "SOLVED" in result:
+            supabase.table("games").update({"status": "DONE"}).eq("id", game_id).execute()
 
 
         return {"response": result}

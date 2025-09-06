@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useGame } from "@/contexts/GameContext";
 import { fetchUserGames } from "@/lib/helpers";
 import { auth } from "@/lib/supabase";
+import { toast } from "react-hot-toast";
 
 export default function Settings() {
   const { user, checkingUser } = useAuth();
@@ -39,7 +40,10 @@ export default function Settings() {
   // Set first game as selected when games load
   useEffect(() => {
     if (userGames && userGames.length > 0 && !selectedGame) {
-      setSelectedGame(userGames.find((game) => game.is_active).id);
+      setSelectedGame(
+        userGames.find((game) => game.is_active && game.status === "CAST_READY")
+          ?.id
+      );
     }
   }, [userGames, selectedGame]);
 
@@ -197,7 +201,13 @@ export default function Settings() {
                 return (
                   <div
                     key={game.id}
-                    onClick={() => setSelectedGame(game.id)}
+                    onClick={() => {
+                      if (game.status === "DONE") {
+                        toast.error("This game is already completed");
+                      } else {
+                        setSelectedGame(game.id);
+                      }
+                    }}
                     className={`bg-black/60 border border-white/10 rounded-2xl p-6 cursor-pointer transition-all duration-200 hover:bg-black/70 hover:scale-105 ${
                       selectedGame === game.id
                         ? "border-brass-warm bg-brass-warm/20 hover:bg-brass-warm/10"
@@ -226,7 +236,10 @@ export default function Settings() {
                       <div className="mt-4 pt-4 border-t border-white/10">
                         <button
                           className="w-full py-2 px-4 bg-brass-warm text-white rounded-lg hover:bg-wood-light transition-colors font-medium"
-                          onClick={() => setGame(game.id)}
+                          onClick={() => {
+                            setGame(game.id);
+                            toast.success(`Switched to ${game.title}`);
+                          }}
                         >
                           Switch to This Case
                         </button>

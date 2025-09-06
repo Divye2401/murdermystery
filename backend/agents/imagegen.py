@@ -56,7 +56,7 @@ async def generate_location_images(locations: List[Dict], game_id: str, game_tit
         atmosphere = location.get("atmosphere", "mysterious")
         
         # Create detailed prompt for location
-        prompt = f"{location_name}, {location_description}, {atmosphere} atmosphere, murder mystery setting, dramatic shadows, detailed architecture,colorful realistic style, high quality digital art, {game_title} setting"
+        prompt = f"{location_name}, {location_description}, {atmosphere} atmosphere, murder mystery setting, dramatic shadows, detailed architecture, realistic style, high quality digital art, {game_title} setting"
         
         try:
             print(f"🎨 Generating image for location: {location_name}")
@@ -92,28 +92,33 @@ async def generate_clue_images(clues: List[Dict], game_id: str, game_title: str)
         clue_name = clue.get("title", "Unknown")
         clue_description = clue.get("description", "")
         
-        # Create detailed prompt for clue/evidence
-        prompt = f"{clue_name}, {clue_description}, evidence photo, crime scene style, realistic detailed close-up, forensic photography style, high quality digital art, {game_title} setting"
         
-        try:
-            print(f"🎨 Generating image for clue: {clue_name}")
-            
-            # Call the image tool directly
-            image_url = image_tool._run(
-                prompt=prompt,
-                image_type="clue",
-                subject_name=clue_name,
-                game_id=game_id
-            )
-            
-            if image_url:
-                results[clue_name] = image_url
-                print(f"✅ Generated image for {clue_name}")
-            else:
-                print(f"❌ Failed to generate image for {clue_name}")
+        # Create detailed prompt for clue/evidence
+        prompt1 = f"{clue_name}, {clue_description}, evidence photo, crime scene style, realistic detailed close-up, forensic photography style, high quality digital art, {game_title} setting"
+        prompt2 = f"{clue_name}, {clue_description}, investigation documentation, detective scene style, realistic detailed close-up, professional photography style, high quality digital art, {game_title} setting"
+        prompt3 = f"{clue_name}, {clue_description}, mysterious object photography, vintage mystery aesthetic, dramatic lighting, detailed close-up, high quality digital art, {game_title} setting"
+        
+        for index, prompt in enumerate([prompt1, prompt2, prompt3]):
+            try:
+                print(f"🎨 Generating image for clue: {clue_name} (attempt {index+1})")
                 
-        except Exception as e:
-            print(f"❌ Error generating image for {clue_name}: {str(e)}")
-    
+                # Call the image tool directly
+                image_url = image_tool._run(
+                    prompt=prompt,
+                    image_type="clue",
+                    subject_name=clue_name,
+                    game_id=game_id
+                )
+                
+                if image_url:
+                    results[clue_name] = image_url
+                    print(f"✅ Generated image for {clue_name}")
+                    break
+                else:
+                    print(f"❌ Failed to generate image for {clue_name} with prompt no. {index+1}")
+                    
+            except Exception as e:
+                print(f"❌ Error generating image for {clue_name} with prompt no. {index+1}: {str(e)}")
+        
     print(f"🎨 Completed clue image generation. Generated {len(results)} images.")
     return results

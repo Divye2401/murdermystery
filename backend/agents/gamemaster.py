@@ -51,7 +51,7 @@ database_agent = Agent(
 
     SearchCharactersTool is used to search for characters by partial name match - handles typos and partial names.
     GetCharacterDataTool is used to get character data by name and game_id.
-    GetLocationDataTool is used to get location data by name and game_id.
+    GetLocationDataTool is used to get location data by name and game_id. (Accepts location name as a string)
     GetCluesInLocationTool is used to get clues in a specific location.
     GetTimelineEventsTool is used to get all timeline events for the game.
     GetAllCluesTool is used to get all clues discovered in the game.
@@ -120,6 +120,7 @@ def handle_query(game_id: str, player_query: str, conversation_history: list = N
         coworker (string): The role/name of the coworker to delegate to
 
         Do not include game_id or any image urls in the final output to the player.
+        If u feel the game has to be solved, respond with "SOLVED" as the last word and provide a summary of the solved game.
         
 
 
