@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 /* eslint-disable @next/next/no-img-element */
 import { fetchClues, sendMessage } from "@/lib/helpers";
 import { toast } from "react-hot-toast";
+import AudioPlayer from "@/components/AudioPlayer";
 
 export default function Evidence() {
   const { user, checkingUser } = useAuth();
@@ -17,7 +18,14 @@ export default function Evidence() {
   const [selectedEvidence, setSelectedEvidence] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [responses, setResponses] = useState({});
+
+  // Typewriter effect state
+  const [streamingResponse, setStreamingResponse] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
   const inputRef = useRef(null);
+
+  // State to persist each evidence's input content
+  const [evidenceInputs, setEvidenceInputs] = useState({});
 
   // Fetch clues data
   const {
@@ -49,6 +57,28 @@ export default function Evidence() {
     }
   };
 
+  // Typewriter effect function
+  const typewriterEffect = (text, callback, speed = 30) => {
+    let i = 0;
+    const timer = setInterval(() => {
+      callback(text.slice(0, i + 1));
+      i++;
+      if (i === text.length) {
+        clearInterval(timer);
+        setIsTyping(false);
+      }
+    }, speed);
+    return timer;
+  };
+
+  // Restore content when switching evidence
+  useEffect(() => {
+    if (selectedEvidence && inputRef.current) {
+      const savedContent = evidenceInputs[selectedEvidence.id] || "";
+      inputRef.current.textContent = savedContent;
+    }
+  }, [selectedEvidence, evidenceInputs]);
+
   const handleSendMessage = async () => {
     const inputValue =
       inputRef.current?.textContent || inputRef.current?.innerText;
@@ -56,12 +86,18 @@ export default function Evidence() {
     if (!inputValue?.trim()) return;
 
     setIsLoading(true);
+    setStreamingResponse(""); // Clear previous streaming text
 
     const query = `I want to analyze the clue "${selectedEvidence.title}" regarding "${inputValue}"`;
 
     try {
       const apiResponse = await sendMessage(currentGameId, query);
       console.log(apiResponse);
+
+      if (apiResponse?.response) {
+        setIsTyping(true);
+        typewriterEffect(apiResponse.response, setStreamingResponse, 30);
+      }
 
       // Update responses state with the AI response for this clue
       setResponses((prev) => ({
@@ -210,7 +246,21 @@ export default function Evidence() {
             return (
               <div
                 key={evidence.id}
-                onClick={() => setSelectedEvidence(evidence)}
+                onClick={() => {
+                  // Save current evidence's content before switching
+                  if (selectedEvidence && inputRef.current) {
+                    const currentContent =
+                      inputRef.current.textContent ||
+                      inputRef.current.innerText ||
+                      "";
+                    setEvidenceInputs((prev) => ({
+                      ...prev,
+                      [selectedEvidence.id]: currentContent,
+                    }));
+                  }
+                  // Switch to new evidence
+                  setSelectedEvidence(evidence);
+                }}
                 className={`bg-black/60 border border-white/10 rounded-3xl p-6 cursor-pointer transition-all duration-200 hover:bg-black/70 hover:scale-105 ${
                   selectedEvidence?.id === evidence.id
                     ? "!border-white border bg-gold-bright/40 hover:bg-gold-bright/30"
@@ -271,7 +321,20 @@ export default function Evidence() {
                 Evidence: {selectedEvidence.title}
               </h2>
               <button
-                onClick={() => setSelectedEvidence(null)}
+                onClick={() => {
+                  // Save current evidence's content before closing
+                  if (selectedEvidence && inputRef.current) {
+                    const currentContent =
+                      inputRef.current.textContent ||
+                      inputRef.current.innerText ||
+                      "";
+                    setEvidenceInputs((prev) => ({
+                      ...prev,
+                      [selectedEvidence.id]: currentContent,
+                    }));
+                  }
+                  setSelectedEvidence(null);
+                }}
                 className="text-white/60 hover:text-white transition-colors"
               >
                 ✕
@@ -327,14 +390,23 @@ export default function Evidence() {
                 />
 
                 {/* Response Display */}
-                {responses[selectedEvidence.id] && (
+                {(responses[selectedEvidence.id] || isTyping) && (
                   <>
                     <h3 className="font-semibold text-base text-gold-bright mb-3 mt-4">
                       Analysis reveals:
                     </h3>
                     <div className="border-2 border-brass/70 rounded-lg px-3 py-2 text-paper-light bg-black/40">
                       <div className="leading-relaxed px-2 py-4">
-                        {responses[selectedEvidence.id].message}
+                        {isTyping ? (
+                          <>
+                            {streamingResponse}
+                            <span className="animate-pulse text-green-400">
+                              |
+                            </span>
+                          </>
+                        ) : (
+                          responses[selectedEvidence.id]?.message
+                        )}
                       </div>
                     </div>
                   </>
@@ -360,6 +432,7 @@ export default function Evidence() {
           </div>
         )}
       </div>
+      <AudioPlayer src="/audio/clues.mp3" volume={0.015} />
     </div>
   );
 }

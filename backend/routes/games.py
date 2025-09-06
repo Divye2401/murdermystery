@@ -306,7 +306,8 @@ async def store_game_update(game_id: str, update_result: str):
             # Store the ID before potentially removing it
 
             if action == "insert":
-                    del data["id"]
+                    if "id" in data:
+                        del data["id"]
                     data["game_id"] = game_id
                     result = supabase.table(table).insert(data).execute()
                     

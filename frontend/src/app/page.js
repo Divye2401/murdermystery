@@ -34,12 +34,16 @@ export default function Dashboard() {
     queryFn: () => fetchConversationHistory(gameId),
     enabled: !!gameId && !!user,
     staleTime: 30 * 1000,
-    refetchInterval: 30 * 1000,
+    refetchInterval: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // Typewriter effect state
+  const [streamingResponse, setStreamingResponse] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
 
   // New Game Modal state
   const [showNewGameModal, setShowNewGameModal] = useState(false);
@@ -62,16 +66,49 @@ export default function Dashboard() {
     return null;
   }
 
+  // Typewriter effect function
+  const typewriterEffect = (text, callback, speed = 30) => {
+    let i = 0;
+    const timer = setInterval(() => {
+      callback(text.slice(0, i + 1));
+      i++;
+      if (i === text.length) {
+        clearInterval(timer);
+      }
+    }, speed);
+    return timer;
+  };
+
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
 
-    setInputValue("");
-    setIsLoading(true);
+    try {
+      const currentInput = inputValue;
+      setInputValue("");
+      setIsLoading(true);
+      setStreamingResponse("");
+      setIsTyping(false);
 
-    const response = await sendMessage(gameId, inputValue);
-    console.log(response);
-    setIsLoading(false);
-    refetch();
+      const response = await sendMessage(gameId, currentInput);
+      console.log(response);
+
+      // Start typewriter effect for new response
+      if (response?.response) {
+        setIsTyping(true);
+        typewriterEffect(response.response, setStreamingResponse, 30);
+      }
+
+      setTimeout(() => {
+        setIsTyping(false);
+        setStreamingResponse("");
+        refetch();
+      }, response?.response?.length * 30 + 5000); // Add some delay to let the typewriter effect finish
+    } catch (error) {
+      console.error("Error sending message:", error);
+      toast.error("Failed to send message");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleKeyPress = (e) => {
@@ -247,6 +284,24 @@ export default function Dashboard() {
                     <br />
                     What would you like to investigate first?
                   </p>
+                </div>
+              </div>
+            )}
+
+            {/* Streaming Response */}
+            {isTyping && streamingResponse && (
+              <div className="space-y-6">
+                <div className="flex justify-start my-3">
+                  <div className="max-w-2xl px-5 py-4 rounded-4xl bg-black/70 border border-cream/30 text-white">
+                    <div className="text-sm leading-relaxed">
+                      {streamingResponse}
+                      <span className="animate-pulse text-cream">|</span>
+                    </div>
+                    <div className="text-xs opacity-60 mt-2 flex items-center gap-1">
+                      <span>•</span>
+                      <span>Just now</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -458,7 +513,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      <AudioPlayer src="/audio/dashboard.wav" volume={0.05} autoPlay />
+      <AudioPlayer src="/audio/dash.flac" volume={0.015} />
     </div>
   );
 }

@@ -9,6 +9,7 @@ import { useGame } from "@/contexts/GameContext";
 import { QueryCache, queryOptions, useQuery } from "@tanstack/react-query";
 import { fetchCharacters, sendMessage } from "@/lib/helpers";
 import { toast } from "react-hot-toast";
+import AudioPlayer from "@/components/AudioPlayer";
 
 export default function Characters() {
   const { user, checkingUser } = useAuth();
@@ -17,7 +18,14 @@ export default function Characters() {
   const [selectedCharacter, setSelectedCharacter] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [responses, setResponses] = useState({});
+
+  // Typewriter effect state
+  const [streamingResponse, setStreamingResponse] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
   const inputRef = useRef(null);
+
+  // State to persist each character's input content
+  const [characterInputs, setCharacterInputs] = useState({});
   // Fetch characters data
   const {
     data: characters,
@@ -38,6 +46,30 @@ export default function Characters() {
     }
   }, [user, checkingUser, router]);
 
+  // Typewriter effect function
+  const typewriterEffect = (text, callback, speed = 30) => {
+    let i = 0;
+    const timer = setInterval(() => {
+      callback(text.slice(0, i + 1));
+      i++;
+      if (i === text.length) {
+        clearInterval(timer);
+        setIsTyping(false);
+      }
+    }, speed);
+    return timer;
+  };
+
+  // Handle input changes to save content to state
+
+  // Restore content when switching characters
+  useEffect(() => {
+    if (selectedCharacter && inputRef.current) {
+      const savedContent = characterInputs[selectedCharacter.id] || "";
+      inputRef.current.textContent = savedContent;
+    }
+  }, [selectedCharacter, characterInputs]);
+
   const handleSendMessage = async () => {
     const inputValue =
       inputRef.current?.textContent || inputRef.current?.innerText;
@@ -45,6 +77,7 @@ export default function Characters() {
     if (!inputValue?.trim()) return;
 
     setIsLoading(true);
+    setStreamingResponse(""); // Clear previous streaming text
 
     const query = `I want to talk to ${selectedCharacter.name} about "${inputValue}"`;
 
@@ -52,16 +85,17 @@ export default function Characters() {
       const apiResponse = await sendMessage(currentGameId, query);
       console.log(apiResponse);
 
-      // Update responses state with the AI response for this character
+      if (apiResponse?.response) {
+        setIsTyping(true);
+        typewriterEffect(apiResponse.response, setStreamingResponse, 30);
+      }
+
       setResponses((prev) => ({
         ...prev,
         [selectedCharacter.id]: {
           message: apiResponse.response || "No response received",
         },
       }));
-
-      // Don't clear selected character - keep it to show response for this character
-      // setSelectedCharacter(null);
     } catch (error) {
       console.error("Error sending message:", error);
       toast.error("Failed to send message");
@@ -178,7 +212,21 @@ export default function Characters() {
           {characters.map((character) => (
             <div
               key={character.id}
-              onClick={() => setSelectedCharacter(character)}
+              onClick={() => {
+                // Save current character's content before switching
+                if (selectedCharacter && inputRef.current) {
+                  const currentContent =
+                    inputRef.current.textContent ||
+                    inputRef.current.innerText ||
+                    "";
+                  setCharacterInputs((prev) => ({
+                    ...prev,
+                    [selectedCharacter.id]: currentContent,
+                  }));
+                }
+                // Switch to new character
+                setSelectedCharacter(character);
+              }}
               className={`bg-black/40 border rounded-2xl p-6 cursor-pointer transition-all  hover:scale-105 ${
                 selectedCharacter?.id === character.id
                   ? " bg-rose-gold/90 hover:bg-rose-gold/70"
@@ -244,7 +292,19 @@ export default function Characters() {
                 {selectedCharacter.name}
               </h2>
               <button
-                onClick={() => setSelectedCharacter(null)}
+                onClick={() => {
+                  if (inputRef.current && selectedCharacter) {
+                    const currentContent =
+                      inputRef.current.textContent ||
+                      inputRef.current.innerText ||
+                      "";
+                    setCharacterInputs((prev) => ({
+                      ...prev,
+                      [selectedCharacter.id]: currentContent,
+                    }));
+                  }
+                  setSelectedCharacter(null);
+                }}
                 className="text-white/60 hover:text-white transition-colors"
               >
                 ✕
@@ -380,14 +440,23 @@ export default function Characters() {
                 />
 
                 {/* Response Display */}
-                {responses[selectedCharacter.id] && (
+                {(responses[selectedCharacter.id] || isTyping) && (
                   <>
                     <h3 className="font-mystery-bold text-lg text-rose-gold mb-3 mt-4">
                       {selectedCharacter.name} says:
                     </h3>
                     <div className=" border-2 border-rose-gold/70 rounded-lg px-3 py-2">
                       <div className="text-white leading-relaxed px-2 py-4">
-                        {responses[selectedCharacter.id].message}
+                        {isTyping ? (
+                          <>
+                            {streamingResponse}
+                            <span className="animate-pulse text-green-400">
+                              |
+                            </span>
+                          </>
+                        ) : (
+                          responses[selectedCharacter.id]?.message
+                        )}
                       </div>
                     </div>
                   </>
@@ -413,6 +482,7 @@ export default function Characters() {
           </div>
         )}
       </div>
+      <AudioPlayer src="/audio/characters.mp3" volume={0.03} />
     </div>
   );
 }

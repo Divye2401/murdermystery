@@ -150,6 +150,7 @@ class GetCharacterDataTool(BaseTool):
             if response.data:
                 character = response.data[0]
                 return json.dumps({
+                    "id": character["id"],  # Include the database ID!
                     "name": character["name"],
                     "description": character["description"],
                     "personality": character["personality"],
@@ -180,6 +181,7 @@ class GetLocationDataTool(BaseTool):
             if response.data:
                 location = response.data[0]
                 return json.dumps({
+                    "id": location["id"],  # Include the database ID!
                     "name": location["name"],
                     "description": location["description"],
                     "is_accessible": location["is_accessible"],
@@ -207,6 +209,7 @@ class GetCluesInLocationTool(BaseTool):
             clues = []
             for clue in response.data:
                 clues.append({
+                    "id": clue["id"],  # Include the database ID!
                     "title": clue["title"],
                     "description": clue["description"],
                     "is_revealed": clue["is_revealed"],

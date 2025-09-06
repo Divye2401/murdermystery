@@ -8,6 +8,7 @@ import { useGame } from "@/contexts/GameContext";
 import { useQuery } from "@tanstack/react-query";
 import { fetchTimelineEvents, sendMessage } from "@/lib/helpers";
 import { toast } from "react-hot-toast";
+import AudioPlayer from "@/components/AudioPlayer";
 
 export default function Timeline() {
   const { user, checkingUser } = useAuth();
@@ -16,7 +17,14 @@ export default function Timeline() {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [responses, setResponses] = useState({});
+
+  // Typewriter effect state
+  const [streamingResponse, setStreamingResponse] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
   const inputRef = useRef(null);
+
+  // State to persist each event's input content
+  const [eventInputs, setEventInputs] = useState({});
 
   // Fetch timeline events data
   const {
@@ -38,6 +46,28 @@ export default function Timeline() {
     }
   }, [user, checkingUser, router]);
 
+  // Typewriter effect function
+  const typewriterEffect = (text, callback, speed = 30) => {
+    let i = 0;
+    const timer = setInterval(() => {
+      callback(text.slice(0, i + 1));
+      i++;
+      if (i === text.length) {
+        clearInterval(timer);
+        setIsTyping(false);
+      }
+    }, speed);
+    return timer;
+  };
+
+  // Restore content when switching events
+  useEffect(() => {
+    if (selectedEvent && inputRef.current) {
+      const savedContent = eventInputs[selectedEvent.id] || "";
+      inputRef.current.textContent = savedContent;
+    }
+  }, [selectedEvent, eventInputs]);
+
   const handleSendMessage = async () => {
     const inputValue =
       inputRef.current?.textContent || inputRef.current?.innerText;
@@ -45,12 +75,18 @@ export default function Timeline() {
     if (!inputValue?.trim()) return;
 
     setIsLoading(true);
+    setStreamingResponse(""); // Clear previous streaming text
 
     const query = `I want to investigate the timeline event "${selectedEvent.event_description}" regarding "${inputValue}"`;
 
     try {
       const apiResponse = await sendMessage(currentGameId, query);
       console.log(apiResponse);
+
+      if (apiResponse?.response) {
+        setIsTyping(true);
+        typewriterEffect(apiResponse.response, setStreamingResponse, 30);
+      }
 
       // Update responses state with the AI response for this timeline event
       setResponses((prev) => ({
@@ -214,7 +250,21 @@ export default function Timeline() {
                 <div key={event.id} className="flex">
                   {/* Event Card */}
                   <div
-                    onClick={() => setSelectedEvent(event)}
+                    onClick={() => {
+                      // Save current event's content before switching
+                      if (selectedEvent && inputRef.current) {
+                        const currentContent =
+                          inputRef.current.textContent ||
+                          inputRef.current.innerText ||
+                          "";
+                        setEventInputs((prev) => ({
+                          ...prev,
+                          [selectedEvent.id]: currentContent,
+                        }));
+                      }
+                      // Switch to new event
+                      setSelectedEvent(event);
+                    }}
                     className={`bg-black/80 border border-white/10 rounded-2xl p-6 cursor-pointer transition-all duration-200 hover:bg-black/70 w-55  flex-shrink-0 hover:scale-105 ${
                       selectedEvent?.id === event.id
                         ? "!border-white bg-investigation-red/50 hover:bg-investigation-red/40"
@@ -270,7 +320,20 @@ export default function Timeline() {
                 Event Details:
               </h2>
               <button
-                onClick={() => setSelectedEvent(null)}
+                onClick={() => {
+                  // Save current event's content before closing
+                  if (selectedEvent && inputRef.current) {
+                    const currentContent =
+                      inputRef.current.textContent ||
+                      inputRef.current.innerText ||
+                      "";
+                    setEventInputs((prev) => ({
+                      ...prev,
+                      [selectedEvent.id]: currentContent,
+                    }));
+                  }
+                  setSelectedEvent(null);
+                }}
                 className="text-white/60 hover:text-white transition-colors"
               >
                 ✕
@@ -334,14 +397,23 @@ export default function Timeline() {
                 />
 
                 {/* Response Display */}
-                {responses[selectedEvent.id] && (
+                {(responses[selectedEvent.id] || isTyping) && (
                   <>
                     <h3 className="font-semibold text-base text-calendar-paper mb-3 mt-4">
                       Timeline event reveals:
                     </h3>
                     <div className="border-2 border-investigation-red/70 rounded-lg px-3 py-2 text-white bg-black/40">
                       <div className="leading-relaxed px-2 py-4">
-                        {responses[selectedEvent.id].message}
+                        {isTyping ? (
+                          <>
+                            {streamingResponse}
+                            <span className="animate-pulse text-green-400">
+                              |
+                            </span>
+                          </>
+                        ) : (
+                          responses[selectedEvent.id]?.message
+                        )}
                       </div>
                     </div>
                   </>
@@ -367,6 +439,7 @@ export default function Timeline() {
           </div>
         )}
       </div>
+      <AudioPlayer src="/audio/timeline.wav" volume={0.005} />
     </div>
   );
 }

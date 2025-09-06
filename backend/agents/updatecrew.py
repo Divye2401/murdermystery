@@ -21,7 +21,7 @@ update_agent = Agent(
     - get_timeline_events: See all events that have happened in the game so far
     - get_all_clues: See all clues that have been discovered in the game
     - get_all_location_data: See all location data for the game
-    - generate_mystery_image: Generate a mystery image for a clue
+    - generate_mystery_image: Generate a mystery image for a clue/location/character
 
     ANALYSIS PROCESS:
     1. Use tools to check current state of relevant game elements
@@ -56,12 +56,12 @@ async def analyze_for_updates(game_id: str, player_query: str, ai_response: str)
         PLAYER QUERY: {player_query}
         AI RESPONSE: {ai_response}
         
-        STEP 1: Use your tools to check current game state
+        STEP 1: MANDATORY - Use your tools to check current game state BEFORE suggesting any updates
         - If interaction mentions characters, use get_character_data or search_characters
         - If interaction mentions locations, use get_location_data
-        - If interaction mentions finding something, use get_clues_in_location or get_all_clues to see what's already there
+        - If interaction mentions finding something, ALWAYS use get_all_clues FIRST to see what already exists
         - Use get_timeline_events to see what events have already been recorded
-        - Use get_all_clues to see all discovered clues and avoid duplicates
+        - CRITICAL: Use get_all_clues to see all discovered clues and prevent duplicates
         
         STEP 2: Compare interaction with current state
         Examine BOTH the player query AND AI response to determine:
@@ -74,23 +74,33 @@ async def analyze_for_updates(game_id: str, player_query: str, ai_response: str)
         7. Were any character relationships/conversations revealed?
         
         STEP 3: Only suggest updates for actual changes between the current state and the interaction
-        EXAMPLES:
-        - AI says "You find a bloody knife" → Check if knife already in clues → If not, ADD clue
-        - Player says "I think John is the killer" → ADD timeline_event (player theory)
-        - AI says "The door is now unlocked" → Check location accessibility → If changed, UPDATE location
+        DUPLICATE PREVENTION EXAMPLES:
+        - AI says "You find a bloody knife" → FIRST check get_all_clues for "knife" → If knife already exists, DO NOT INSERT, just UPDATE is_revealed if needed
+        - AI says "You discover a letter" → FIRST check get_all_clues for "letter" → If letter already exists, DO NOT INSERT
+        - Player says "I think John is the killer" → Check timeline_events for similar theory → If similar exists, DO NOT INSERT
+        
+        ONLY INSERT NEW RECORDS IF:
+        1. You used get_all_clues and confirmed the clue title does NOT exist
+        2. You used get_timeline_events and confirmed similar event does NOT exist
         
         For each update:
         - Specify exact table (clues, timeline_events, characters, locations)
         - Specify action (insert, update, delete)
-        - Provide data to insert/update/delete (Data must include id always)
+        - Provide data to insert/update/delete 
         - Give clear reasoning based on your tool checks
+
+        In your image generation, make sure to include to create realistic, high definition images, detailed charcteristics, related to game setting.
         
-        Check the Important section below before providing your response:
+        IMPORTANT: If providing New Locations, make sure to generate an image for the location using generate_mystery_image.
+        IMPORTANT: If providing New Characters or asked to provide character images, make sure to generate an image for the character using generate_mystery_image.
         IMPORTANT: If providing Newclues, make sure to generate an image for the clue using generate_mystery_image.
+
         IMPORTANT: If providing timeline events, make sure event_time is the latest chronologically.
         IMPORTANT: Provide data strictly in the format of GameUpdateAnalysis, nothing extra.
-        IMPORTANT: Use your database tools to avoid duplicate updates/inserts (Do NOT INSERT if it already exists, JUST UPDATE)!
+        CRITICAL: ALWAYS use get_all_clues tool BEFORE inserting any clue. Do NOT INSERT if it already exists, JUST UPDATE!
+        CRITICAL: ALWAYS use get_timeline_events tool BEFORE inserting any timeline event. Do NOT INSERT duplicates!
         IMPORTANT: Only provide existing columns in the database, do not make up columns.
+        IMPORTANT: For updates/deletes, provide the actual database 'id' field (UUID) from your tool queries, NOT the name. 
 
        
         """,

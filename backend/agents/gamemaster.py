@@ -25,10 +25,10 @@ master_agent = Agent(
     Follow the correct tool usage format when delegating tasks.
     Use the exact role names above when delegating tasks.
     Only use the approriate members needed to complete the task.
-    When sending to roleplay, send relevant information about the characters personality, secrets, lying policy, and motivations also to the character agent. Respond in first person IF roleplaying.
+    When sending to roleplay, send relevant information about the characters personality, secrets, lying policy, and motivations also to the character agent. Respond IN FIRST PERSON IF roleplaying.
     If the character is dead, say so and do not roleplay.
 
-
+    
     
     Very important: If you cannot find the information, say so and do not make up information.
 
@@ -120,7 +120,8 @@ def handle_query(game_id: str, player_query: str, conversation_history: list = N
         coworker (string): The role/name of the coworker to delegate to
 
         Do not include game_id or any image urls in the final output to the player.
-        If u feel the game has to be solved, respond with "SOLVED" as the last word and provide a summary of the solved game.
+        Do not answer any direct questions about the killer to the player.
+        If u feel the game has been solved via player query, respond with "SOLVED" as the last word and provide a summary of the solved game.
         
 
 

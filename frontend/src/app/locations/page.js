@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 /* eslint-disable @next/next/no-img-element */
 import { fetchLocations, sendMessage } from "@/lib/helpers";
 import { toast } from "react-hot-toast";
+import AudioPlayer from "@/components/AudioPlayer";
 
 export default function Locations() {
   const { user, checkingUser } = useAuth();
@@ -17,7 +18,14 @@ export default function Locations() {
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [responses, setResponses] = useState({});
+
+  // Typewriter effect state
+  const [streamingResponse, setStreamingResponse] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
   const inputRef = useRef(null);
+
+  // State to persist each location's input content
+  const [locationInputs, setLocationInputs] = useState({});
 
   // Fetch locations data
   const {
@@ -39,6 +47,28 @@ export default function Locations() {
     }
   }, [user, checkingUser, router]);
 
+  // Typewriter effect function
+  const typewriterEffect = (text, callback, speed = 30) => {
+    let i = 0;
+    const timer = setInterval(() => {
+      callback(text.slice(0, i + 1));
+      i++;
+      if (i === text.length) {
+        clearInterval(timer);
+        setIsTyping(false);
+      }
+    }, speed);
+    return timer;
+  };
+
+  // Restore content when switching locations
+  useEffect(() => {
+    if (selectedLocation && inputRef.current) {
+      const savedContent = locationInputs[selectedLocation.id] || "";
+      inputRef.current.textContent = savedContent;
+    }
+  }, [selectedLocation, locationInputs]);
+
   const handleSendMessage = async () => {
     const inputValue =
       inputRef.current?.textContent || inputRef.current?.innerText;
@@ -46,12 +76,18 @@ export default function Locations() {
     if (!inputValue?.trim()) return;
 
     setIsLoading(true);
+    setStreamingResponse(""); // Clear previous streaming text
 
     const query = `I want to explore ${selectedLocation.name} regard "${inputValue}"`;
 
     try {
       const apiResponse = await sendMessage(currentGameId, query);
       console.log(apiResponse);
+
+      if (apiResponse?.response) {
+        setIsTyping(true);
+        typewriterEffect(apiResponse.response, setStreamingResponse, 30);
+      }
 
       // Update responses state with the AI response for this location
       setResponses((prev) => ({
@@ -202,7 +238,21 @@ export default function Locations() {
             return (
               <div
                 key={location.id}
-                onClick={() => setSelectedLocation(location)}
+                onClick={() => {
+                  // Save current location's content before switching
+                  if (selectedLocation && inputRef.current) {
+                    const currentContent =
+                      inputRef.current.textContent ||
+                      inputRef.current.innerText ||
+                      "";
+                    setLocationInputs((prev) => ({
+                      ...prev,
+                      [selectedLocation.id]: currentContent,
+                    }));
+                  }
+                  // Switch to new location
+                  setSelectedLocation(location);
+                }}
                 className={`bg-black/60 border border-white/10 rounded-3xl p-6 cursor-pointer transition-all duration-200 hover:bg-black/70 hover:scale-105 ${
                   selectedLocation?.id === location.id
                     ? "border-moonbeam bg-moonbeam/20 hover:bg-moonbeam/10"
@@ -274,7 +324,20 @@ export default function Locations() {
                 Selected: {selectedLocation.name}
               </h2>
               <button
-                onClick={() => setSelectedLocation(null)}
+                onClick={() => {
+                  // Save current location's content before closing
+                  if (selectedLocation && inputRef.current) {
+                    const currentContent =
+                      inputRef.current.textContent ||
+                      inputRef.current.innerText ||
+                      "";
+                    setLocationInputs((prev) => ({
+                      ...prev,
+                      [selectedLocation.id]: currentContent,
+                    }));
+                  }
+                  setSelectedLocation(null);
+                }}
                 className="text-white/60 hover:text-white transition-colors"
               >
                 ✕
@@ -337,14 +400,23 @@ export default function Locations() {
                   data-placeholder="Enter your investigation focus (e.g., 'Look for hidden clues', 'Examine the furniture', 'Check for signs of struggle')..."
                 />
                 {/* Response Display */}
-                {responses[selectedLocation.id] && (
+                {(responses[selectedLocation.id] || isTyping) && (
                   <>
                     <h3 className="font-semibold text-base text-moon-glow mb-3 mt-4">
                       {selectedLocation.name} reveals:
                     </h3>
                     <div className="border-2 border-moonlight/70 rounded-lg px-3 py-2 text-white bg-black/40">
                       <div className="leading-relaxed px-2 py-4">
-                        {responses[selectedLocation.id].message}
+                        {isTyping ? (
+                          <>
+                            {streamingResponse}
+                            <span className="animate-pulse text-green-400">
+                              |
+                            </span>
+                          </>
+                        ) : (
+                          responses[selectedLocation.id]?.message
+                        )}
                       </div>
                     </div>
                   </>
@@ -369,6 +441,7 @@ export default function Locations() {
           </div>
         )}
       </div>
+      <AudioPlayer src="/audio/locations.wav" volume={0.015} />
     </div>
   );
 }

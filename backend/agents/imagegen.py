@@ -55,28 +55,34 @@ async def generate_location_images(locations: List[Dict], game_id: str, game_tit
         location_description = location.get("description", "")
         atmosphere = location.get("atmosphere", "mysterious")
         
-        # Create detailed prompt for location
-        prompt = f"{location_name}, {location_description}, {atmosphere} atmosphere, murder mystery setting, dramatic shadows, detailed architecture, realistic style, high quality digital art, {game_title} setting"
+        # Create detailed prompt for location (most risky to safest)
+        prompt1 = f"{location_name}, {location_description}, {atmosphere} atmosphere, murder mystery setting, dramatic shadows, detailed architecture, realistic style, high quality digital art, {game_title} setting"
+        prompt2 = f"{location_name}, {location_description}, {atmosphere} atmosphere, investigation scene, dramatic lighting, detailed architecture, realistic style, high quality digital art, {game_title} setting"
+        prompt3 = f"{location_name}, {location_description}, {atmosphere} atmosphere, mysterious location photography, vintage aesthetic, dramatic lighting, detailed architecture, high quality digital art, {game_title} setting"
         
-        try:
-            print(f"🎨 Generating image for location: {location_name}")
+
             
-            # Call the image tool directly
-            image_url = image_tool._run(
-                prompt=prompt,
-                image_type="location",
-                subject_name=location_name,
-                game_id=game_id
-            )
-            
-            if image_url:
-                results[location_name] = image_url
-                print(f"✅ Generated image for {location_name}")
-            else:
-                print(f"❌ Failed to generate image for {location_name}")
+         
+        for index, prompt in enumerate([prompt1, prompt2, prompt3]):
+
+            try:
+                image_url = image_tool._run(
+                    prompt=prompt,
+                    image_type="location",
+                    subject_name=location_name,
+                    game_id=game_id
+                )
                 
-        except Exception as e:
-            print(f"❌ Error generating image for {location_name}: {str(e)}")
+                if image_url:
+                    results[location_name] = image_url
+                    print(f"✅ Generated image for {location_name}")
+                    break
+                else:
+                    print(f"❌ Failed to generate image for {location_name} with prompt no. {index+1}")
+                
+            except Exception as e:
+                print(f"❌ Error generating image for {location_name} with prompt no. {index+1}: {str(e)}")
+
     
     print(f"🎨 Completed location image generation. Generated {len(results)} images.")
     return results

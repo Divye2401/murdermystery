@@ -9,6 +9,7 @@ import { useGame } from "@/contexts/GameContext";
 import { fetchUserGames } from "@/lib/helpers";
 import { auth } from "@/lib/supabase";
 import { toast } from "react-hot-toast";
+import AudioPlayer from "@/components/AudioPlayer";
 
 export default function Settings() {
   const { user, checkingUser } = useAuth();
@@ -307,6 +308,7 @@ export default function Settings() {
           </div>
         </div>
       </div>
+      <AudioPlayer src="/audio/settings.wav" volume={0.03} />
     </div>
   );
 }
