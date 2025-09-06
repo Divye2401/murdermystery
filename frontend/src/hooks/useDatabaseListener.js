@@ -11,11 +11,15 @@ export function useDatabaseListener() {
 
   const handleCharacterChange = (payload) => {
     if (payload.eventType === "UPDATE") {
-      toast("👤 Character information updated", {
+      const name = payload.new.name;
+      toast(`👤 ${name} information updated`, {
+        id: "character-updated",
         icon: "📝",
       });
     } else if (payload.eventType === "INSERT") {
-      toast("👤 New character added", {
+      const name = payload.new.name;
+      toast(`👤 New character added: ${name}`, {
+        id: "character-inserted",
         icon: "📝",
       });
     }
@@ -25,6 +29,7 @@ export function useDatabaseListener() {
     if (payload.eventType === "INSERT") {
       toast.success("🔍 New clue discovered!", {
         duration: 5000,
+        id: "clue-inserted",
       });
     }
   };
@@ -32,7 +37,7 @@ export function useDatabaseListener() {
   const handleTimelineChange = (payload) => {
     if (payload.eventType === "INSERT") {
       toast("⏰ Timeline updated", {
-        icon: "📅",
+        id: "timeline-updated",
       });
     }
   };
@@ -41,23 +46,35 @@ export function useDatabaseListener() {
     if (payload.eventType === "UPDATE") {
       toast("🔍 New location discovered!", {
         duration: 5000,
+        id: "location-updated",
       });
     }
   };
 
   useEffect(() => {
-    if (!user?.id || !currentGameId) return;
+    if (!user?.id || !currentGameId) {
+      return;
+    }
+
+    console.log("🔄 Setting up realtime subscriptions for:", {
+      userId: user.id,
+      gameId: currentGameId,
+    });
 
     const gameChannel = supabase
-      .channel(`game-${currentGameId}`)
+      .channel(`game-${currentGameId}-debug`)
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
           table: "characters",
+          filter: `game_id=eq.${currentGameId}`,
         },
-        handleCharacterChange
+        (payload) => {
+          console.log("🎯 CHARACTERS change received:", payload);
+          handleCharacterChange(payload);
+        }
       )
       .on(
         "postgres_changes",
@@ -67,7 +84,10 @@ export function useDatabaseListener() {
           table: "clues",
           filter: `game_id=eq.${currentGameId}`,
         },
-        handleClueChange
+        (payload) => {
+          console.log("🎯 CLUES change received:", payload);
+          handleClueChange(payload);
+        }
       )
       .on(
         "postgres_changes",
@@ -77,7 +97,10 @@ export function useDatabaseListener() {
           table: "timeline_events",
           filter: `game_id=eq.${currentGameId}`,
         },
-        handleTimelineChange
+        (payload) => {
+          console.log("🎯 TIMELINE change received:", payload);
+          handleTimelineChange(payload);
+        }
       )
       .on(
         "postgres_changes",
@@ -87,12 +110,27 @@ export function useDatabaseListener() {
           table: "locations",
           filter: `game_id=eq.${currentGameId}`,
         },
-        handleLocationChange
+        (payload) => {
+          console.log("🎯 LOCATIONS change received:", payload);
+          handleLocationChange(payload);
+        }
       )
-      .subscribe((status) => {
+      .subscribe((status, err) => {
         console.log("Realtime subscription status:", status);
+        if (err) {
+          console.error("❌ Subscription error:", err);
+        }
         if (status === "SUBSCRIBED") {
           console.log("🎉 Realtime connected! for game:", currentGameId);
+
+          // Test if ANY postgres changes are being received
+          console.log("🔍 Testing realtime - insert a test record now!");
+        } else if (status === "CHANNEL_ERROR") {
+          console.error("❌ Channel error - replication likely broken");
+        } else if (status === "TIMED_OUT") {
+          console.error("⏰ Subscription timed out");
+        } else if (status === "CLOSED") {
+          console.warn("🔒 Channel closed");
         }
       });
 

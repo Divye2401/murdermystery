@@ -6,13 +6,17 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGame } from "@/contexts/GameContext";
 import { useQuery } from "@tanstack/react-query";
-import { fetchLocations } from "@/lib/helpers";
+/* eslint-disable @next/next/no-img-element */
+import { fetchLocations, sendMessage } from "@/lib/helpers";
+import { toast } from "react-hot-toast";
 
 export default function Locations() {
   const { user, checkingUser } = useAuth();
   const { currentGameId } = useGame();
   const router = useRouter();
   const [selectedLocation, setSelectedLocation] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [responses, setResponses] = useState({});
   const inputRef = useRef(null);
 
   // Fetch locations data
@@ -35,9 +39,54 @@ export default function Locations() {
     }
   }, [user, checkingUser, router]);
 
-  const handleExplore = (location) => {
-    console.log(`Exploring ${location.name}...`);
-    // TODO: Open exploration interface or chat focused on location
+  const handleSendMessage = async () => {
+    const inputValue =
+      inputRef.current?.textContent || inputRef.current?.innerText;
+
+    if (!inputValue?.trim()) return;
+    if (inputRef.current) {
+      inputRef.current.textContent = "";
+    }
+    setIsLoading(true);
+
+    const query = `I want to explore ${selectedLocation.name} regard "${inputValue}"`;
+
+    try {
+      const apiResponse = await sendMessage(currentGameId, query);
+      console.log(apiResponse);
+
+      // Update responses state with the AI response for this location
+      setResponses((prev) => ({
+        ...prev,
+        [selectedLocation.id]: {
+          message: apiResponse.response || "No response received",
+        },
+      }));
+
+      // Don't clear selected location - keep it to show response for this location
+      // setSelectedLocation(null);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      toast.error("Failed to send message");
+
+      // Set error response for this location
+      setResponses((prev) => ({
+        ...prev,
+        [selectedLocation.id]: {
+          message: "Sorry, I couldn't process your request. Please try again.",
+        },
+      }));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (isLoading) return;
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
   };
 
   // Show loading while checking authentication
@@ -163,7 +212,24 @@ export default function Locations() {
                 }`}
               >
                 <div className="text-center mb-3">
-                  <div className="text-3xl mb-3">🏛️</div>
+                  {location.image_url ? (
+                    <div className="w-full h-60 mx-auto mb-2 rounded-4xl overflow-hidden border-2 border-moonbeam/50">
+                      <img
+                        src={location.image_url}
+                        alt={location.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                          e.target.nextSibling.style.display = "block";
+                        }}
+                      />
+                      <div className="text-4xl hidden">🏛️</div>
+                    </div>
+                  ) : (
+                    <div className="text-3xl mb-3 h-60 rounded-4xl flex items-center justify-center">
+                      🏛️
+                    </div>
+                  )}
                   <h3
                     className={`font-semibold  mb-1 ${
                       selectedLocation?.id === location.id
@@ -269,17 +335,35 @@ export default function Locations() {
                   ref={inputRef}
                   className="flex-1 border-2 border-moonlight/70 rounded-lg px-3 py-2 focus:outline-none focus:border-moonlight text-white bg-black/40 min-h-0"
                   suppressContentEditableWarning={true}
+                  onKeyPress={handleKeyPress}
                   data-placeholder="Enter your investigation focus (e.g., 'Look for hidden clues', 'Examine the furniture', 'Check for signs of struggle')..."
                 />
+                {/* Response Display */}
+                {responses[selectedLocation.id] && (
+                  <>
+                    <h3 className="font-semibold text-base text-moon-glow mb-3 mt-4">
+                      {selectedLocation.name} reveals:
+                    </h3>
+                    <div className="border-2 border-moonlight/70 rounded-lg px-3 py-2 text-white bg-black/40">
+                      <div className="leading-relaxed">
+                        {responses[selectedLocation.id].message}
+                      </div>
+                    </div>
+                  </>
+                )}
                 <div className="mt-4">
                   <button
                     onClick={() => {
-                      handleExplore(selectedLocation);
-                      inputRef.current.innerHTML = "";
+                      handleSendMessage();
                     }}
-                    className="w-full py-3 px-6 rounded-lg font-medium transition-colors bg-moonlight text-white hover:bg-shadow"
+                    className="w-full py-3 px-6 rounded-lg font-medium transition-colors bg-moonlight text-white hover:bg-shadow disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isLoading}
                   >
-                    🔍 Start Investigation
+                    {isLoading ? (
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>
+                    ) : (
+                      "🔍 Start Investigation"
+                    )}
                   </button>
                 </div>{" "}
               </div>

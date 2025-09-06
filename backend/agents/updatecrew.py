@@ -1,12 +1,12 @@
 from crewai import Agent, Task, Crew, Process   
-from classes import GameUpdateAnalysis, GetCharacterDataTool, GetLocationDataTool, GetCluesInLocationTool, SearchCharactersTool, GetTimelineEventsTool, GetAllCluesTool, GetAllLocationDataTool
+from classes import GameUpdateAnalysis, GetCharacterDataTool, GetLocationDataTool, GetCluesInLocationTool, SearchCharactersTool, GetTimelineEventsTool, GetAllCluesTool, GetAllLocationDataTool, ImageTool
 
 # Update Analysis Agent with database tools
 update_agent = Agent(
     role="Game State Analyzer",
     goal="Analyze game interactions against current game state to determine what database updates are needed",
     allow_delegation=False,
-    tools=[GetCharacterDataTool(), GetLocationDataTool(), GetCluesInLocationTool(), SearchCharactersTool(), GetTimelineEventsTool(), GetAllCluesTool(), GetAllLocationDataTool()],
+    tools=[GetCharacterDataTool(), GetLocationDataTool(), GetCluesInLocationTool(), SearchCharactersTool(), GetTimelineEventsTool(), GetAllCluesTool(), GetAllLocationDataTool(),ImageTool()],
     backstory="""You are a specialized analyst for murder mystery games. Your job is to:
 
     1. CHECK CURRENT GAME STATE using your database tools
@@ -21,6 +21,7 @@ update_agent = Agent(
     - get_timeline_events: See all events that have happened in the game so far
     - get_all_clues: See all clues that have been discovered in the game
     - get_all_location_data: See all location data for the game
+    - generate_mystery_image: Generate a mystery image for a clue
 
     ANALYSIS PROCESS:
     1. Use tools to check current state of relevant game elements
@@ -87,6 +88,7 @@ async def analyze_for_updates(game_id: str, player_query: str, ai_response: str)
         
         IMPORTANT: Use your database tools to avoid duplicate updates!
         Only provide existing columns in the database, do not make up columns.
+        If providing Newclues, make sure to generate an image for the clue using generate_mystery_image.
         If providing timeline events, make sure event_time is the latest chronologically.
         IMPORTANT: Provide data strictly in the format of GameUpdateAnalysis, nothing extra.
         """,

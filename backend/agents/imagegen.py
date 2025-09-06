@@ -6,7 +6,7 @@ import asyncio
 # Initialize the image generation tool directly
 image_tool = ImageTool()
 
-async def generate_character_images(characters: List[Dict], game_id: str) -> Dict:
+async def generate_character_images(characters: List[Dict], game_id: str, game_title: str) -> Dict:
     """Generate images for all characters using direct API calls."""
     print(f"🎨 Starting character image generation for {len(characters)} characters")
     
@@ -18,7 +18,7 @@ async def generate_character_images(characters: List[Dict], game_id: str) -> Dic
         character_description = character.get("description", "")
         
         # Create detailed prompt for character
-        prompt = f"Portrait of {character_name}, {character_description}, realistic style, good lighting, detailed facial features, unique appearance, high quality digital art"
+        prompt = f"Portrait of {character_name}, {character_description}, realistic style, good lighting, detailed facial features, unique appearance, high quality digital art, {game_title} setting"
         
         try:
             print(f"🎨 Generating image for character: {character_name}")
@@ -43,7 +43,7 @@ async def generate_character_images(characters: List[Dict], game_id: str) -> Dic
     print(f"🎨 Completed character image generation. Generated {len(results)} images.")
     return results
 
-async def generate_location_images(locations: List[Dict], game_id: str) -> Dict:
+async def generate_location_images(locations: List[Dict], game_id: str, game_title: str) -> Dict:
     """Generate images for all locations using direct API calls."""
     print(f"🎨 Starting location image generation for {len(locations)} locations")
     
@@ -56,7 +56,7 @@ async def generate_location_images(locations: List[Dict], game_id: str) -> Dict:
         atmosphere = location.get("atmosphere", "mysterious")
         
         # Create detailed prompt for location
-        prompt = f"{location_name}, {location_description}, {atmosphere} atmosphere, murder mystery setting, dramatic shadows, detailed architecture, realistic style, high quality digital art"
+        prompt = f"{location_name}, {location_description}, {atmosphere} atmosphere, murder mystery setting, dramatic shadows, detailed architecture,colorful realistic style, high quality digital art, {game_title} setting"
         
         try:
             print(f"🎨 Generating image for location: {location_name}")
@@ -81,7 +81,7 @@ async def generate_location_images(locations: List[Dict], game_id: str) -> Dict:
     print(f"🎨 Completed location image generation. Generated {len(results)} images.")
     return results
 
-async def generate_clue_images(clues: List[Dict], game_id: str) -> Dict:
+async def generate_clue_images(clues: List[Dict], game_id: str, game_title: str) -> Dict:
     """Generate images for all clues using direct API calls."""
     print(f"🎨 Starting clue image generation for {len(clues)} clues")
     
@@ -93,7 +93,7 @@ async def generate_clue_images(clues: List[Dict], game_id: str) -> Dict:
         clue_description = clue.get("description", "")
         
         # Create detailed prompt for clue/evidence
-        prompt = f"{clue_name}, {clue_description}, evidence photo, crime scene style, realistic detailed close-up, forensic photography style, high quality digital art"
+        prompt = f"{clue_name}, {clue_description}, evidence photo, crime scene style, realistic detailed close-up, forensic photography style, high quality digital art, {game_title} setting"
         
         try:
             print(f"🎨 Generating image for clue: {clue_name}")

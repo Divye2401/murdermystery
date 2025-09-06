@@ -72,3 +72,46 @@ export const fetchUserGames = async (userId) => {
   if (error) throw error;
   return data;
 };
+
+export const createGame = async (userId, gamedetails) => {
+  try {
+    console.log("Creating game:", userId, gamedetails);
+    const res = await fetch(`${API_URL}/api/games/create/${userId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title: gamedetails.title,
+        description: gamedetails.description,
+        character_count: gamedetails.numberOfCharacters,
+      }),
+    });
+    console.log("Response:", res);
+
+    const data = await res.json();
+    console.log("Response data:", data);
+
+    if (!res.ok) {
+      // Extract the actual error message from backend
+      throw new Error(data.detail);
+    }
+
+    return data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const sendMessage = async (gameId, message) => {
+  const res = await fetch(`${API_URL}/api/games/query/${gameId}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ query: message }),
+  });
+  const data = await res.json();
+  console.log(data);
+  return data;
+};

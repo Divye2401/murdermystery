@@ -5,20 +5,30 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchConversationHistory } from "@/lib/helpers";
+import {
+  fetchConversationHistory,
+  sendMessage,
+  createGame,
+} from "@/lib/helpers";
 import AudioPlayer from "@/components/AudioPlayer";
 import { useGame } from "@/contexts/GameContext";
+import { toast } from "react-hot-toast";
 
 export default function Dashboard() {
   const { user, checkingUser } = useAuth();
   const router = useRouter();
-  const { currentGameId: gameId, currentGamename: gameName } = useGame();
+  const {
+    currentGameId: gameId,
+    currentGamename: gameName,
+    fetchCurrentGame,
+  } = useGame();
   const queryClient = useQueryClient();
 
   const {
     data: conversations,
     isLoading: conversationsLoading,
     error: conversationsError,
+    refetch,
   } = useQuery({
     queryKey: ["conversations", gameId],
     queryFn: () => fetchConversationHistory(gameId),
@@ -30,6 +40,15 @@ export default function Dashboard() {
 
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // New Game Modal state
+  const [showNewGameModal, setShowNewGameModal] = useState(false);
+  const [newGameData, setNewGameData] = useState({
+    title: "",
+    description: "",
+    numberOfCharacters: 5,
+  });
+  const [creatingGame, setCreatingGame] = useState(false);
 
   // Protect this route - redirect to login if not authenticated
   useEffect(() => {
@@ -46,33 +65,52 @@ export default function Dashboard() {
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
 
-    // Add user message
-
     setInputValue("");
     setIsLoading(true);
 
-    // TODO: Call AI backend here
-    // For now, simulate AI response
-    setTimeout(() => {
-      const Response = {
-        id: Date.now() + 1,
-        user_query: inputValue,
-        agent_response:
-          "Let me analyze that evidence for you... [This will connect to your CrewAI backend]",
-        created_at: new Date().toISOString(),
-      };
-      queryClient.setQueryData(["conversations", gameId], (old) => [
-        ...old,
-        Response,
-      ]);
-      setIsLoading(false);
-    }, 1500);
+    const response = await sendMessage(gameId, inputValue);
+    console.log(response);
+    setIsLoading(false);
+    refetch();
   };
 
   const handleKeyPress = (e) => {
+    if (isLoading) return;
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
+    }
+  };
+
+  const handleCreateGame = async () => {
+    if (!newGameData.title.trim()) {
+      toast.error("Game title is required");
+      return;
+    }
+
+    setCreatingGame(true);
+    try {
+      const response = await createGame(user.id, newGameData);
+      console.log("Create game response:", response);
+
+      if (response && !response.error) {
+        toast.success("New game created successfully!");
+        setShowNewGameModal(false);
+        setNewGameData({
+          title: "",
+          description: "",
+          numberOfCharacters: 5,
+        });
+        // Fetch and switch to the newly created game
+        await fetchCurrentGame();
+      } else {
+        toast.error(response?.error || "Failed to create game");
+      }
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setCreatingGame(false);
+      setShowNewGameModal(false);
     }
   };
 
@@ -95,6 +133,13 @@ export default function Dashboard() {
           </div>
 
           <div className="flex items-center space-x-3">
+            <button
+              onClick={() => setShowNewGameModal(true)}
+              className="p-2 rounded-lg bg-cream/20 hover:bg-cream/30 transition-colors border border-cream/30"
+              title="Create New Game"
+            >
+              ➕
+            </button>
             <Link
               href="/settings"
               className="p-2 rounded-lg bg-cream/20 hover:bg-cream/30 transition-colors"
@@ -306,6 +351,110 @@ export default function Dashboard() {
           </Link>
         </div>
       </div>
+
+      {/* New Game Modal */}
+      {showNewGameModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-black/90 border border-cream/40 rounded-3xl p-8 max-w-md w-full">
+            <h3 className="text-2xl font-bold text-cream mb-6 text-center">
+              🎭 Create New Mystery
+            </h3>
+
+            <div className="space-y-4">
+              {/* Title */}
+              <div>
+                <label className="block text-cream text-sm font-medium mb-2">
+                  Game Title *
+                </label>
+                <input
+                  type="text"
+                  value={newGameData.title}
+                  onChange={(e) =>
+                    setNewGameData({ ...newGameData, title: e.target.value })
+                  }
+                  placeholder="e.g., Murder at the Mansion"
+                  className="w-full px-4 py-3 rounded-xl bg-black/40 border border-cream/40 text-white placeholder-cream/60 focus:outline-none focus:ring-2 focus:ring-cream/60"
+                />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-cream text-sm font-medium mb-2">
+                  Description
+                </label>
+                <textarea
+                  value={newGameData.description}
+                  onChange={(e) =>
+                    setNewGameData({
+                      ...newGameData,
+                      description: e.target.value,
+                    })
+                  }
+                  placeholder="A brief description of your mystery..."
+                  rows={3}
+                  className="w-full px-4 py-3 rounded-xl bg-black/40 border border-cream/40 text-white placeholder-cream/60 focus:outline-none focus:ring-2 focus:ring-cream/60 resize-none"
+                />
+              </div>
+
+              {/* Number of Characters */}
+              <div>
+                <label className="block text-cream text-sm font-medium mb-2">
+                  Number of Characters
+                </label>
+                <select
+                  value={newGameData.numberOfCharacters}
+                  onChange={(e) =>
+                    setNewGameData({
+                      ...newGameData,
+                      numberOfCharacters: parseInt(e.target.value),
+                    })
+                  }
+                  className="w-full px-4 py-3 rounded-xl bg-black/40 border border-cream/40 text-white focus:outline-none focus:ring-2 focus:ring-cream/60"
+                >
+                  <option value={3}>3 Characters</option>
+                  <option value={4}>4 Characters</option>
+                  <option value={5}>5 Characters</option>
+                  <option value={6}>6 Characters</option>
+                  <option value={7}>7 Characters</option>
+                  <option value={8}>8 Characters</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex gap-3 mt-8">
+              <button
+                onClick={() => {
+                  setShowNewGameModal(false);
+                  setNewGameData({
+                    title: "",
+                    description: "",
+                    numberOfCharacters: 5,
+                  });
+                }}
+                className="flex-1 px-6 py-3 rounded-xl bg-gray-600/40 border border-gray-500/40 text-white hover:bg-gray-600/60 transition-colors"
+                disabled={creatingGame}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateGame}
+                disabled={creatingGame || !newGameData.title.trim()}
+                className="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-cream to-cream text-black hover:from-cream hover:to-cream transition-all disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
+              >
+                {creatingGame ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
+                    Creating...
+                  </div>
+                ) : (
+                  "Create Game"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <AudioPlayer src="/audio/dashboard.wav" volume={0.05} autoPlay />
     </div>

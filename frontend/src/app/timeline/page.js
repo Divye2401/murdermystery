@@ -6,13 +6,16 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGame } from "@/contexts/GameContext";
 import { useQuery } from "@tanstack/react-query";
-import { fetchTimelineEvents } from "@/lib/helpers";
+import { fetchTimelineEvents, sendMessage } from "@/lib/helpers";
+import { toast } from "react-hot-toast";
 
 export default function Timeline() {
   const { user, checkingUser } = useAuth();
   const { currentGameId } = useGame();
   const router = useRouter();
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [responses, setResponses] = useState({});
   const inputRef = useRef(null);
 
   // Fetch timeline events data
@@ -35,9 +38,54 @@ export default function Timeline() {
     }
   }, [user, checkingUser, router]);
 
-  const handleAnalyze = (event) => {
-    console.log(`Analyzing ${event.event_description}...`);
-    // TODO: Open analysis interface or chat focused on timeline event
+  const handleSendMessage = async () => {
+    const inputValue =
+      inputRef.current?.textContent || inputRef.current?.innerText;
+
+    if (!inputValue?.trim()) return;
+    if (inputRef.current) {
+      inputRef.current.textContent = "";
+    }
+    setIsLoading(true);
+
+    const query = `I want to investigate the timeline event "${selectedEvent.event_description}" regarding "${inputValue}"`;
+
+    try {
+      const apiResponse = await sendMessage(currentGameId, query);
+      console.log(apiResponse);
+
+      // Update responses state with the AI response for this timeline event
+      setResponses((prev) => ({
+        ...prev,
+        [selectedEvent.id]: {
+          message: apiResponse.response || "No response received",
+        },
+      }));
+
+      // Don't clear selected event - keep it to show response for this event
+      // setSelectedEvent(null);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      toast.error("Failed to send message");
+
+      // Set error response for this timeline event
+      setResponses((prev) => ({
+        ...prev,
+        [selectedEvent.id]: {
+          message: "Sorry, I couldn't process your request. Please try again.",
+        },
+      }));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (isLoading) return;
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
   };
 
   // Show loading while checking authentication
@@ -116,7 +164,7 @@ export default function Timeline() {
       >
         <div className="text-center">
           <div className="text-shadow text-6xl mb-4">⏰</div>
-          <h2 className="text-2xl font-bold text-shadow mb-2">
+          <h2 className="text-2xl font-bold text-red-bright mb-2">
             No Timeline Events Found
           </h2>
           <p className="text-gray-300">
@@ -283,18 +331,37 @@ export default function Timeline() {
                   ref={inputRef}
                   className="flex-1 border-2 border-investigation-red/70 rounded-lg px-3 py-2 focus:outline-none focus:border-calendar-paper text-white bg-black/40 min-h-0"
                   suppressContentEditableWarning={true}
+                  onKeyPress={handleKeyPress}
                   data-placeholder="Enter your investigation focus (e.g., 'Check for inconsistencies', 'Cross-reference with other events', 'Interview witnesses')..."
                 />
+
+                {/* Response Display */}
+                {responses[selectedEvent.id] && (
+                  <>
+                    <h3 className="font-semibold text-base text-calendar-paper mb-3 mt-4">
+                      Timeline event reveals:
+                    </h3>
+                    <div className="border-2 border-investigation-red/70 rounded-lg px-3 py-2 text-white bg-black/40">
+                      <div className="leading-relaxed">
+                        {responses[selectedEvent.id].message}
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 <div className="mt-4">
                   <button
                     onClick={() => {
-                      handleAnalyze(selectedEvent);
-                      inputRef.current.innerHTML = "";
+                      handleSendMessage();
                     }}
-                    className="w-full py-3 px-6 rounded-lg font-medium transition-colors bg-investigation-red text-white hover:bg-shadow"
+                    className="w-full py-3 px-6 rounded-lg font-medium transition-colors bg-investigation-red text-white hover:bg-shadow disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isLoading}
                   >
-                    🔍 Start Investigation
+                    {isLoading ? (
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>
+                    ) : (
+                      "🔍 Start Investigation"
+                    )}
                   </button>
                 </div>
               </div>

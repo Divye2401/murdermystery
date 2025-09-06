@@ -20,7 +20,9 @@ async def create_game(game_request: dict, user_id: str):
     """Generate and store a complete murder mystery game using AI agent."""
     try:
         # Validation
+        
         if not game_request.get("title") or not game_request.get("description") or not game_request.get("character_count"):
+            
             raise HTTPException(400, "Missing required input fields")
         
         # Validate user exists (security check)
@@ -214,15 +216,17 @@ async def bg_generate_images(game_id: str, items: list, item_type: str):
     """Background process for generating images for characters, locations, or clues."""
     try:
         print(f"🎨 Starting background {item_type} image generation for game {game_id}")
+        supabase = get_supabase_client()
+        game_title = supabase.table("games").select("title").eq("id", game_id).execute()
         
         # Generate images based on type
         urls = {}
         if item_type == "characters":
-            urls = await generate_character_images(items, game_id)
+            urls = await generate_character_images(items, game_id, game_title)
         elif item_type == "locations":
-            urls = await generate_location_images(items, game_id)
+            urls = await generate_location_images(items, game_id, game_title)
         elif item_type == "clues":
-            urls = await generate_clue_images(items, game_id)
+            urls = await generate_clue_images(items, game_id, game_title)
         else:
             print(f"❌ Unknown item type: {item_type}")
             return False

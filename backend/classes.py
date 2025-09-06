@@ -361,56 +361,57 @@ class ImageTool(BaseTool):  # TODO: Rename to DalleImageTool
             print(f"🎨 Generating {image_type} image for: {subject_name}")
             
             # DALL-E 3 via OpenAI API
-            #print(f"🎯 Calling DALL-E API") #colmment
+            print(f"🎯 Calling DALL-E API") #colmment
             
             # Get OpenAI API key
-            #openai_key = os.getenv("OPENAI_API_KEY")
-            #if not openai_key:
-                #print("❌ OPENAI_API_KEY not found in environment variables")
-                #return None
+            openai_key = os.getenv("OPENAI_API_KEY")
+            if not openai_key:
+                print("❌ OPENAI_API_KEY not found in environment variables")
+                return None
             
-            #openai.api_key = openai_key
+            openai.api_key = openai_key
             
             # Call DALL-E 3
-            #response = openai.images.generate(
-            #    model="dall-e-3",
-            #    prompt=prompt,
-            #    size="1024x1024",
-            #    quality="standard",
-            #    n=1
-            #)
             
-            #print(f"✅ DALL-E generated image successfully")
+            response = openai.images.generate(
+                model="dall-e-3",
+                prompt=prompt,
+                size="1024x1024",
+                quality="standard",
+                n=1
+            )
+            
+            print(f"✅ DALL-E generated image successfully")
             
             # Download image from temporary URL
-            #temp_url = response.data[0].url
-            #img_response = requests.get(temp_url, timeout=30)
-            #img_response.raise_for_status()
-            #image_data = img_response.content
+            temp_url = response.data[0].url
+            img_response = requests.get(temp_url, timeout=30)
+            img_response.raise_for_status()
+            image_data = img_response.content
             
             # # COMMENTED FLUX CODE:
             # # Get HuggingFace API token
-            hf_token = os.getenv("HUGGINGFACE_API_TOKEN")
-            if not hf_token:
-                 print("❌ HUGGINGFACE_API_TOKEN not found in environment variables")
-                 return None
+            #hf_token = os.getenv("HUGGINGFACE_API_TOKEN")
+            #if not hf_token:
+                 #print("❌ HUGGINGFACE_API_TOKEN not found in environment variables")
+                 #return None
             # 
             # # Call Flux via Hugging Face Inference API
-            print(f"🎯 Calling Flux API ")
-            client = InferenceClient(api_key=hf_token)
-            image = client.text_to_image(
-                 prompt,
-                 model="black-forest-labs/FLUX.1-dev",
-                 width=1024,
-                 height=1024
-            )
+            #print(f"🎯 Calling Flux API ")
+            #client = InferenceClient(api_key=hf_token)
+            #image = client.text_to_image(
+                 #prompt,
+            #     model="black-forest-labs/FLUX.1-dev",
+            #     width=1024,
+            #     height=1024
+            #)
             # 
-            print(f"✅ Flux generated image successfully")
+            #print(f"✅ Flux generated image successfully")
             # 
             # # Convert PIL Image to bytes for upload
-            img_bytes = io.BytesIO()
-            image.save(img_bytes, format='PNG')
-            image_data = img_bytes.getvalue()
+            #img_bytes = io.BytesIO()
+            #image.save(img_bytes, format='PNG')
+            #image_data = img_bytes.getvalue()
             
             # Upload directly to Supabase Storage
             permanent_url = self._upload_to_supabase(image_data, filename, subject_name)

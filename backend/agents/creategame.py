@@ -30,14 +30,16 @@ def create_murder_mystery_game(title: str, description: str, character_count: st
         REQUIREMENTS:
         1. Create {character_count} unique characters with distinct personalities, backgrounds, and motives (The victim has to be mandatorily included in the character count)
         2. Designate exactly ONE character as the killer (is_killer: true)
-        3. Create 5-8 atmospheric locations that fit the setting
-        4. Generate 5-7 clues of varying importance (significance_level 1-5)
-        5. Create a chronological timeline of events leading to and including the murder
-        6. Ensure characters have believable relationships and secrets
-        7. Make sure clues point to different characters to create red herrings
+        3. Designate exactly ONE character as the victim (is_victim: true)
+        4. Create 5-8 atmospheric locations that fit the setting
+        5. Designate exactly ONE location as the murder location (is_murder_location: true)
+        6. Generate 5-7 clues of varying importance (significance_level 1-5)
+        7. Create a chronological timeline of events leading to and including the murder
+        8. Ensure characters have believable relationships and secrets
+        9. Make sure clues point to different characters to create red herrings
         
         CHARACTER GUIDELINES:
-        - Victim cannot be the killer, Victim is always dead(is_alive: false) and is_victim: true, Killer is always alive(is_alive: true) and is_killer: true
+        - Victim cannot be the killer, Victim is always dead(is_alive: false), Killer is always alive(is_alive: true)
         - Each character needs a unique lie_policy: honest, evasive, deceptive, or pathological
         - Give characters realistic secrets and relationships
         - The killer should have a clear motive and opportunity

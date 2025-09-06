@@ -122,38 +122,58 @@ CREATE POLICY "Users can access their own games" ON games FOR ALL USING (auth.ui
 -- Grant permissions to replication role for Realtime
 GRANT SELECT ON TABLE public.characters TO supabase_replication_admin;
 
-CREATE POLICY "Users can access characters in their games" ON characters FOR ALL 
-TO authenticated, supabase_replication_admin
+CREATE POLICY "Characters access policy" ON characters FOR ALL
 USING (
+    -- Allow if user owns the game (for authenticated users)
     EXISTS (SELECT 1 FROM games WHERE games.id = characters.game_id AND games.user_id = auth.uid()::text)
+    OR 
+    -- Allow everything if auth.uid() is null (replication context)
+    auth.uid() IS NULL
 );
 
 GRANT SELECT ON TABLE public.locations TO supabase_replication_admin;
 
-CREATE POLICY "Users can access locations in their games" ON locations FOR ALL 
-TO authenticated, supabase_replication_admin
+CREATE POLICY "Locations access policy" ON locations FOR ALL
 USING (
+    -- Allow if user owns the game (for authenticated users)
     EXISTS (SELECT 1 FROM games WHERE games.id = locations.game_id AND games.user_id = auth.uid()::text)
+    OR 
+    -- Allow everything if auth.uid() is null (replication context)
+    auth.uid() IS NULL
 );
 
 GRANT SELECT ON TABLE public.clues TO supabase_replication_admin;
 
-CREATE POLICY "Users can access clues in their games" ON clues FOR ALL 
-TO authenticated, supabase_replication_admin
+CREATE POLICY "Clues access policy" ON clues FOR ALL
 USING (
+    -- Allow if user owns the game (for authenticated users)
     EXISTS (SELECT 1 FROM games WHERE games.id = clues.game_id AND games.user_id = auth.uid()::text)
+    OR 
+    -- Allow everything if auth.uid() is null (replication context)
+    auth.uid() IS NULL
 );
 
 GRANT SELECT ON TABLE public.timeline_events TO supabase_replication_admin;
 
-CREATE POLICY "Users can access timeline events in their games" ON timeline_events FOR ALL 
-TO authenticated, supabase_replication_admin
+CREATE POLICY "Timeline events access policy" ON timeline_events FOR ALL
 USING (
+    -- Allow if user owns the game (for authenticated users)
     EXISTS (SELECT 1 FROM games WHERE games.id = timeline_events.game_id AND games.user_id = auth.uid()::text)
+    OR 
+    -- Allow everything if auth.uid() is null (replication context)
+    auth.uid() IS NULL
 );
 CREATE POLICY "Users can access interactions in their games" ON interactions FOR ALL USING (
     EXISTS (SELECT 1 FROM games WHERE games.id = interactions.game_id AND games.user_id = auth.uid()::text)
 );
+
+-- Set replica identity for realtime
+ALTER TABLE games REPLICA IDENTITY FULL;
+ALTER TABLE characters REPLICA IDENTITY FULL;
+ALTER TABLE locations REPLICA IDENTITY FULL;
+ALTER TABLE clues REPLICA IDENTITY FULL;
+ALTER TABLE timeline_events REPLICA IDENTITY FULL;
+ALTER TABLE interactions REPLICA IDENTITY FULL;
 
 -- Trigger to update updated_at on games table
 CREATE OR REPLACE FUNCTION update_updated_at_column()

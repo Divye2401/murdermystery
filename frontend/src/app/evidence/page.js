@@ -6,13 +6,17 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGame } from "@/contexts/GameContext";
 import { useQuery } from "@tanstack/react-query";
-import { fetchClues } from "@/lib/helpers";
+/* eslint-disable @next/next/no-img-element */
+import { fetchClues, sendMessage } from "@/lib/helpers";
+import { toast } from "react-hot-toast";
 
 export default function Evidence() {
   const { user, checkingUser } = useAuth();
   const { currentGameId } = useGame();
   const router = useRouter();
   const [selectedEvidence, setSelectedEvidence] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [responses, setResponses] = useState({});
   const inputRef = useRef(null);
 
   // Fetch clues data
@@ -46,9 +50,54 @@ export default function Evidence() {
     }
   };
 
-  const handleAnalyze = (clue) => {
-    console.log(`Analyzing ${clue.title}...`);
-    // TODO: Open analysis interface or chat focused on clue
+  const handleSendMessage = async () => {
+    const inputValue =
+      inputRef.current?.textContent || inputRef.current?.innerText;
+
+    if (!inputValue?.trim()) return;
+    if (inputRef.current) {
+      inputRef.current.textContent = "";
+    }
+    setIsLoading(true);
+
+    const query = `I want to analyze the clue "${selectedEvidence.title}" regarding "${inputValue}"`;
+
+    try {
+      const apiResponse = await sendMessage(currentGameId, query);
+      console.log(apiResponse);
+
+      // Update responses state with the AI response for this clue
+      setResponses((prev) => ({
+        ...prev,
+        [selectedEvidence.id]: {
+          message: apiResponse.response || "No response received",
+        },
+      }));
+
+      // Don't clear selected evidence - keep it to show response for this clue
+      // setSelectedEvidence(null);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      toast.error("Failed to send message");
+
+      // Set error response for this clue
+      setResponses((prev) => ({
+        ...prev,
+        [selectedEvidence.id]: {
+          message: "Sorry, I couldn't process your request. Please try again.",
+        },
+      }));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (isLoading) return;
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
   };
 
   // Show loading while checking authentication
@@ -172,7 +221,24 @@ export default function Evidence() {
                 }`}
               >
                 <div className="text-center mb-3">
-                  <div className="text-3xl mb-3">🔍</div>
+                  {evidence.image_url ? (
+                    <div className="w-full h-60 mx-auto mb-2 rounded-4xl overflow-hidden border-2 border-gold-bright/50">
+                      <img
+                        src={evidence.image_url}
+                        alt={evidence.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                          e.target.nextSibling.style.display = "block";
+                        }}
+                      />
+                      <div className="text-4xl hidden">🔍</div>
+                    </div>
+                  ) : (
+                    <div className="text-3xl mb-3 h-60 rounded-4xl flex items-center justify-center">
+                      🔍
+                    </div>
+                  )}
                   <h3
                     className={`font-semibold text-medium italic mb-1 ${
                       selectedEvidence?.id === evidence.id
@@ -259,18 +325,37 @@ export default function Evidence() {
                   ref={inputRef}
                   className="flex-1 border-2 border-brass/70 rounded-lg px-3 py-2 focus:outline-none focus:border-gold-bright text-paper-light bg-black/40 min-h-0"
                   suppressContentEditableWarning={true}
+                  onKeyPress={handleKeyPress}
                   data-placeholder="Enter your analysis focus (e.g., 'Test for fingerprints', 'Compare with other evidence', 'Check for DNA traces')..."
                 />
+
+                {/* Response Display */}
+                {responses[selectedEvidence.id] && (
+                  <>
+                    <h3 className="font-semibold text-base text-gold-bright mb-3 mt-4">
+                      Analysis reveals:
+                    </h3>
+                    <div className="border-2 border-brass/70 rounded-lg px-3 py-2 text-paper-light bg-black/40">
+                      <div className="leading-relaxed">
+                        {responses[selectedEvidence.id].message}
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 <div className="mt-4">
                   <button
                     onClick={() => {
-                      handleAnalyze(selectedEvidence);
-                      inputRef.current.innerHTML = "";
+                      handleSendMessage();
                     }}
-                    className="w-full py-3 px-6 rounded-lg font-medium transition-colors bg-brass text-white hover:bg-gold-bright"
+                    className="w-full py-3 px-6 rounded-lg font-medium transition-colors bg-brass text-white hover:bg-gold-bright disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isLoading}
                   >
-                    🔬 Start Analysis
+                    {isLoading ? (
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>
+                    ) : (
+                      "🔬 Start Analysis"
+                    )}
                   </button>
                 </div>
               </div>

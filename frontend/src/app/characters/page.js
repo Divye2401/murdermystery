@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -5,14 +6,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGame } from "@/contexts/GameContext";
-import { useQuery } from "@tanstack/react-query";
-import { fetchCharacters } from "@/lib/helpers";
+import { QueryCache, queryOptions, useQuery } from "@tanstack/react-query";
+import { fetchCharacters, sendMessage } from "@/lib/helpers";
+import { toast } from "react-hot-toast";
 
 export default function Characters() {
   const { user, checkingUser } = useAuth();
   const { currentGameId } = useGame();
   const router = useRouter();
   const [selectedCharacter, setSelectedCharacter] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [responses, setResponses] = useState({});
   const inputRef = useRef(null);
   // Fetch characters data
   const {
@@ -34,9 +38,54 @@ export default function Characters() {
     }
   }, [user, checkingUser, router]);
 
-  const handleTalkToCharacter = (character) => {
-    // TODO: Open chat focused on this character
-    console.log(`Opening chat with ${character.name}`);
+  const handleSendMessage = async () => {
+    const inputValue =
+      inputRef.current?.textContent || inputRef.current?.innerText;
+
+    if (!inputValue?.trim()) return;
+    if (inputRef.current) {
+      inputRef.current.textContent = "";
+    }
+    setIsLoading(true);
+
+    const query = `I want to talk to ${selectedCharacter.name} about "${inputValue}"`;
+
+    try {
+      const apiResponse = await sendMessage(currentGameId, query);
+      console.log(apiResponse);
+
+      // Update responses state with the AI response for this character
+      setResponses((prev) => ({
+        ...prev,
+        [selectedCharacter.id]: {
+          message: apiResponse.response || "No response received",
+        },
+      }));
+
+      // Don't clear selected character - keep it to show response for this character
+      // setSelectedCharacter(null);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      toast.error("Failed to send message");
+
+      // Set error response for this character
+      setResponses((prev) => ({
+        ...prev,
+        [selectedCharacter.id]: {
+          message: "Sorry, I couldn't process your request. Please try again.",
+        },
+      }));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (isLoading) return;
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
   };
 
   // Show loading while checking authentication
@@ -139,7 +188,20 @@ export default function Characters() {
               }`}
             >
               <div className="text-center mb-4  transition-transform">
-                <div className="text-4xl mb-2">{character.avatar || "👤"}</div>
+                {character.image_url ? (
+                  <div className="w-full h-60 mx-auto mb-2 rounded-4xl overflow-hidden border-2 border-rose-gold/50">
+                    <img
+                      src={character.image_url}
+                      alt={character.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="text-4xl hidden">👤</div>
+                  </div>
+                ) : (
+                  <div className="text-4xl mb-2 h-60 text-center  rounded-4xl flex items-center justify-center">
+                    {character.avatar || "👤"}
+                  </div>
+                )}
                 <h3
                   className={`font-mystery-bold text-lg  ${
                     selectedCharacter?.id === character.id
@@ -303,17 +365,36 @@ export default function Characters() {
                   ref={inputRef}
                   className="flex-1 border-2 border-rose-gold/70 rounded-lg px-3 py-2 focus:outline-none focus:border-rose-gold" // Style like input
                   suppressContentEditableWarning={true}
+                  onKeyPress={handleKeyPress}
                 />
+
+                {/* Response Display */}
+                {responses[selectedCharacter.id] && (
+                  <>
+                    <h3 className="font-mystery-bold text-lg text-rose-gold mb-3 mt-4">
+                      {selectedCharacter.name} says:
+                    </h3>
+                    <div className=" border-2 border-rose-gold/70 rounded-lg px-3 py-2">
+                      <div className="text-white leading-relaxed">
+                        {responses[selectedCharacter.id].message}
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 <div className="mt-6">
                   <button
                     onClick={() => {
-                      handleTalkToCharacter(selectedCharacter);
-                      inputRef.current.innerHTML = "";
+                      handleSendMessage();
                     }}
-                    className="w-full py-3 px-6 bg-rose-gold text-burgundy-dark rounded-lg hover:bg-wine hover:text-white transition-colors font-medium "
+                    className="w-full py-3 px-6 bg-rose-gold text-burgundy-dark rounded-lg hover:bg-wine hover:text-white transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isLoading}
                   >
-                    💬 Start Conversation
+                    {isLoading ? (
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-black mx-auto"></div>
+                    ) : (
+                      "💬 Start Conversation"
+                    )}
                   </button>
                 </div>
               </div>
