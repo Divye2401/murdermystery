@@ -1,8 +1,10 @@
 # 🕵️ Murder Mystery AI Game
 
 An immersive murder mystery game powered by **Agentic AI** that creates dynamic, personalized detective experiences. Players investigate crimes, interrogate suspects, and uncover clues in a world where every decision shapes the narrative through intelligent AI agents.
+<br>
+![Game Dashboard](https://github.com/user-attachments/assets/8a37c340-b8e1-46fe-9504-fb08a076ec10)
 
-![Game Dashboard](./images/dashboard-screenshot.png)
+
 
 ## 🤖 **Agentic AI Architecture**
 
@@ -83,7 +85,8 @@ graph TD
 - **Multiple Investigation Paths**: No single solution path - explore your way
 - **Real-time State Updates**: Game world responds immediately to your actions
 
-![Character Interaction](./images/character-interaction.png)
+![Character Interaction](<img width="1673" height="837" alt="image" src="https://github.com/user-attachments/assets/88733299-badd-497e-b444-99896f2600e2" />)
+
 
 ### **🤖 Advanced AI Features**
 
