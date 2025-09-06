@@ -44,9 +44,7 @@ export default function Locations() {
       inputRef.current?.textContent || inputRef.current?.innerText;
 
     if (!inputValue?.trim()) return;
-    if (inputRef.current) {
-      inputRef.current.textContent = "";
-    }
+
     setIsLoading(true);
 
     const query = `I want to explore ${selectedLocation.name} regard "${inputValue}"`;
@@ -345,7 +343,7 @@ export default function Locations() {
                       {selectedLocation.name} reveals:
                     </h3>
                     <div className="border-2 border-moonlight/70 rounded-lg px-3 py-2 text-white bg-black/40">
-                      <div className="leading-relaxed">
+                      <div className="leading-relaxed px-2 py-4">
                         {responses[selectedLocation.id].message}
                       </div>
                     </div>

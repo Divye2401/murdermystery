@@ -33,7 +33,7 @@ def create_murder_mystery_game(title: str, description: str, character_count: st
         3. Designate exactly ONE character as the victim (is_victim: true)
         4. Create 5-8 atmospheric locations that fit the setting
         5. Designate exactly ONE location as the murder location (is_murder_location: true)
-        6. Generate 5-7 clues of varying importance (significance_level 1-5)
+        6. Generate 6-8 clues of varying importance (significance_level 1-5)
         7. Create a chronological timeline of events leading to and including the murder
         8. Ensure characters have believable relationships and secrets
         9. Make sure clues point to different characters to create red herrings
@@ -53,6 +53,7 @@ def create_murder_mystery_game(title: str, description: str, character_count: st
         - Mix significance levels: some crucial (4-5), some minor (1-2)
         - Use different discovery methods: investigation, witness, forensics, confession, accident
         - Make clues point to multiple characters for suspense
+        - Some clues should be have is_revealed: true
         
         TIMELINE GUIDELINES:
         - Include events leading up to the murder

@@ -26,7 +26,7 @@ export function useDatabaseListener() {
   };
 
   const handleClueChange = (payload) => {
-    if (payload.eventType === "INSERT") {
+    if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
       toast.success("🔍 New clue discovered!", {
         duration: 5000,
         id: "clue-inserted",

@@ -43,9 +43,7 @@ export default function Timeline() {
       inputRef.current?.textContent || inputRef.current?.innerText;
 
     if (!inputValue?.trim()) return;
-    if (inputRef.current) {
-      inputRef.current.textContent = "";
-    }
+
     setIsLoading(true);
 
     const query = `I want to investigate the timeline event "${selectedEvent.event_description}" regarding "${inputValue}"`;
@@ -342,7 +340,7 @@ export default function Timeline() {
                       Timeline event reveals:
                     </h3>
                     <div className="border-2 border-investigation-red/70 rounded-lg px-3 py-2 text-white bg-black/40">
-                      <div className="leading-relaxed">
+                      <div className="leading-relaxed px-2 py-4">
                         {responses[selectedEvent.id].message}
                       </div>
                     </div>

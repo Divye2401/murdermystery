@@ -45,6 +45,7 @@ export const fetchClues = async (gameId) => {
     .from("clues")
     .select("*")
     .eq("game_id", gameId)
+    .eq("is_revealed", true)
     .order("created_at", { ascending: false });
 
   if (error) throw error;

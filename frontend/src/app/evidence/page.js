@@ -40,7 +40,6 @@ export default function Evidence() {
   }, [user, checkingUser, router]);
 
   const clueurgency = (clue) => {
-    console.log(clue);
     if (clue.significance_level === 1) {
       return "📝 Minor";
     } else if (clue.significance_level > 1 && clue.significance_level <= 4) {
@@ -55,9 +54,7 @@ export default function Evidence() {
       inputRef.current?.textContent || inputRef.current?.innerText;
 
     if (!inputValue?.trim()) return;
-    if (inputRef.current) {
-      inputRef.current.textContent = "";
-    }
+
     setIsLoading(true);
 
     const query = `I want to analyze the clue "${selectedEvidence.title}" regarding "${inputValue}"`;
@@ -336,7 +333,7 @@ export default function Evidence() {
                       Analysis reveals:
                     </h3>
                     <div className="border-2 border-brass/70 rounded-lg px-3 py-2 text-paper-light bg-black/40">
-                      <div className="leading-relaxed">
+                      <div className="leading-relaxed px-2 py-4">
                         {responses[selectedEvidence.id].message}
                       </div>
                     </div>

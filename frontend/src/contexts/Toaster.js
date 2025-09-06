@@ -7,24 +7,24 @@ export default function ToasterComponent() {
       toastOptions={{
         duration: 8000,
         style: {
-          background: "#1f2937", // Dark gray
-          color: "#f3f4f6", // Light gray text
-          border: "1px solid #374151", // Border
+          background: "var(--cream)", // Dark gray
+          color: "black", // Light gray text
+          border: "1px solid var(--cream)", // Border
           borderRadius: "12px",
           fontFamily: "var(--font-sans)",
         },
         success: {
           style: {
-            background: "#065f46", // Dark green
+            background: "var(--cream)", // Dark green
             color: "#d1fae5", // Light green text
-            border: "1px solid #047857",
+            border: "1px solid var(--cream)",
           },
         },
         error: {
           style: {
-            background: "#7f1d1d", // Dark red
+            background: "var(--cream)", // Dark red
             color: "#fecaca", // Light red text
-            border: "1px solid #991b1b",
+            border: "1px solid var(--cream)",
           },
         },
       }}

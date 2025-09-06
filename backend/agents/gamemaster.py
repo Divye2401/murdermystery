@@ -119,7 +119,7 @@ def handle_query(game_id: str, player_query: str, conversation_history: list = N
         context (string): The context for the task
         coworker (string): The role/name of the coworker to delegate to
 
-        Do not include game_id in the final output to the player.
+        Do not include game_id or any image urls in the final output to the player.
         
 
 

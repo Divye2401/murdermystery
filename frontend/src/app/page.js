@@ -205,6 +205,7 @@ export default function Dashboard() {
                               minute: "2-digit",
                               day: "2-digit",
                               month: "2-digit",
+                              timeZone: "UTC",
                             }
                           )}
                         </span>
@@ -228,6 +229,7 @@ export default function Dashboard() {
                               minute: "2-digit",
                               day: "2-digit",
                               month: "2-digit",
+                              timeZone: "UTC",
                             }
                           )}
                         </span>
@@ -250,12 +252,12 @@ export default function Dashboard() {
             )}
 
             {isLoading && (
-              <div className="flex justify-start">
+              <div className="flex justify-center">
                 <div className="bg-black/70 border border-cream/30 px-5 py-4 rounded-2xl">
                   <div className="flex items-center space-x-3">
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-cream"></div>
                     <span className="text-sm text-cream">
-                      AI is analyzing your question...
+                      Analyzing your question...
                     </span>
                   </div>
                 </div>

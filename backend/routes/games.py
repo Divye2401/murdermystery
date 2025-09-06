@@ -297,37 +297,31 @@ async def store_game_update(game_id: str, update_result: str):
         for i, update in enumerate(updates.get("updates", [])):
             print(f"🔍 DEBUG: Processing update {i+1} - {update['action']} on {update['table']}")
             
-            table = update["table"]
-            action = update["action"]
-            data = update["data"]
+            table, action, data = update["table"], update["action"], update["data"]
             
-            if "id" in data:
-                del data["id"]  
+            # Store the ID before potentially removing it
 
             if action == "insert":
-                data["game_id"] = game_id
-                
-                result = supabase.table(table).insert(data).execute()
-                
-                
-            elif action == "update":
-                if(data.get("name")):
-                    name = data.get("name")
-                    result = supabase.table(table).update(data).eq("game_id", game_id).eq("name", name).execute()
-                elif(data.get("title")):
-                    name = data.get("title")
-                    result = supabase.table(table).update(data).eq("game_id", game_id).eq("title", name).execute()
-               
-                
-            elif action == "delete":
-                if(data.get("name")):
-                    name = data.get("name")
-                    result = supabase.table(table).delete().eq("game_id", game_id).eq("name", name).execute()
-                elif(data.get("title")):
-                    name = data.get("title")
-                    result = supabase.table(table).delete().eq("game_id", game_id).eq("title", name).execute()
-               
-        
+                    del data["id"]
+                    data["game_id"] = game_id
+                    result = supabase.table(table).insert(data).execute()
+                    
+
+            else:
+                if "id" in data:
+                    record_id = data["id"]
+                    del data["id"]
+
+                    if action == "update":
+                        result = supabase.table(table).update(data).eq("game_id", game_id).eq("id", record_id).execute()
+
+                    
+                    elif action == "delete":
+                        result = supabase.table(table).delete().eq("game_id", game_id).eq("id", record_id).execute()
+
+                else:
+                    print(f"🔍 DEBUG: No ID found for update {i+1}")
+
         print("🔍 DEBUG: store_game_update FINISHED successfully")
 
     except Exception as e:

@@ -43,9 +43,7 @@ export default function Characters() {
       inputRef.current?.textContent || inputRef.current?.innerText;
 
     if (!inputValue?.trim()) return;
-    if (inputRef.current) {
-      inputRef.current.textContent = "";
-    }
+
     setIsLoading(true);
 
     const query = `I want to talk to ${selectedCharacter.name} about "${inputValue}"`;
@@ -375,7 +373,7 @@ export default function Characters() {
                       {selectedCharacter.name} says:
                     </h3>
                     <div className=" border-2 border-rose-gold/70 rounded-lg px-3 py-2">
-                      <div className="text-white leading-relaxed">
+                      <div className="text-white leading-relaxed px-2 py-4">
                         {responses[selectedCharacter.id].message}
                       </div>
                     </div>
