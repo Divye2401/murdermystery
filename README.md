@@ -59,14 +59,19 @@ This project showcases a sophisticated **multi-agent AI system** where specializ
 ```mermaid
 graph TD
     A[Player Input] --> B[Game Master Agent]
-    B --> C[Update Crew Agent]
-    C --> D[Database Updates]
-    C --> E[Image Generation Agent]
-    E --> F[Visual Assets]
-    B --> G[Response Generation]
-    D --> H[Real-time Frontend Updates]
+    B --> C[Database Agent]
+    B --> D[Roleplay Agent]
+    B --> E[Update Crew Agent]
+    E --> C[Database Agent]
+    E --> F[Image Generation Agent]
+    F --> G[Visual Assets]
+    B --> H[Response Generation]
+    E --> I[Real-time Frontend Updates]
     G --> H
-    F --> H
+    A -->J[Game Creation Agent]
+    J -->F
+    J -->H
+
 ```
 
 ## ✨ **Key Features**
