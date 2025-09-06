@@ -74,6 +74,12 @@ export default function Dashboard() {
       i++;
       if (i === text.length) {
         clearInterval(timer);
+
+        setTimeout(() => {
+          setIsTyping(false);
+          setStreamingResponse("");
+          refetch();
+        }, 2000);
       }
     }, speed);
     return timer;
@@ -97,12 +103,6 @@ export default function Dashboard() {
         setIsTyping(true);
         typewriterEffect(response.response, setStreamingResponse, 30);
       }
-
-      setTimeout(() => {
-        setIsTyping(false);
-        setStreamingResponse("");
-        refetch();
-      }, response?.response?.length * 30 + 5000); // Add some delay to let the typewriter effect finish
     } catch (error) {
       console.error("Error sending message:", error);
       toast.error("Failed to send message");
