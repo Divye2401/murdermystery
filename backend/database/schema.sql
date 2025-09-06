@@ -11,7 +11,10 @@ CREATE TABLE games (
     title TEXT DEFAULT 'Untitled Mystery',
     status TEXT NOT NULL DEFAULT 'INIT' CHECK (status IN ('INIT', 'CAST_READY', 'WORLD_READY', 'IN_PROGRESS', 'DONE')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    opening_summary TEXT DEFAULT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    in_progress BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 -- 2. Characters table
@@ -20,14 +23,16 @@ CREATE TABLE characters (
     game_id UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     description TEXT,
-    persona JSONB NOT NULL DEFAULT '{}',
+    personality JSONB NOT NULL DEFAULT '{}',
     lie_policy TEXT NOT NULL DEFAULT 'honest' CHECK (lie_policy IN ('honest', 'evasive', 'deceptive', 'pathological')),
     is_killer BOOLEAN NOT NULL DEFAULT FALSE,
     is_alive BOOLEAN NOT NULL DEFAULT TRUE,
+    is_victim BOOLEAN NOT NULL DEFAULT FALSE,
     secrets JSONB DEFAULT '[]',
     relationships JSONB DEFAULT '{}',
     metadata JSONB DEFAULT '{}',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    image_url TEXT DEFAULT NULL
 );
 
 -- 3. Locations table
@@ -37,10 +42,11 @@ CREATE TABLE locations (
     name TEXT NOT NULL,
     description TEXT NOT NULL,
     is_accessible BOOLEAN NOT NULL DEFAULT TRUE,
-    connected_locations UUID[] DEFAULT '{}',
+    connected_locations TEXT[] DEFAULT '{}',
     atmosphere TEXT DEFAULT 'neutral',
     metadata JSONB DEFAULT '{}',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    image_url TEXT DEFAULT NULL
 );
 
 -- 4. Clues table
@@ -49,15 +55,16 @@ CREATE TABLE clues (
     game_id UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
-    location_id UUID REFERENCES locations(id),
+    location_id TEXT,
     is_revealed BOOLEAN NOT NULL DEFAULT FALSE,
     discovered_by TEXT,
     discovery_method TEXT DEFAULT 'investigation',
     significance_level INTEGER DEFAULT 1 CHECK (significance_level BETWEEN 1 AND 5),
-    points_to UUID[] DEFAULT '{}', -- Points to character/location IDs
+    points_to TEXT[] DEFAULT '{}', -- Points to character/location names
     metadata JSONB DEFAULT '{}',
     discovered_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    image_url TEXT DEFAULT NULL
 );
 
 -- 5. Timeline events table
@@ -66,11 +73,11 @@ CREATE TABLE timeline_events (
     game_id UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
     event_time TIMESTAMPTZ NOT NULL,
     event_description TEXT NOT NULL,
-    location_id UUID REFERENCES locations(id),
-    character_ids UUID[] DEFAULT '{}',
+    location_id TEXT,
+    character_ids TEXT[] DEFAULT '{}',
     event_type TEXT DEFAULT 'general' CHECK (event_type IN ('murder', 'discovery', 'conversation', 'movement', 'general')),
     is_public BOOLEAN NOT NULL DEFAULT TRUE,
-    witness_ids UUID[] DEFAULT '{}',
+    witness_ids TEXT[] DEFAULT '{}',
     metadata JSONB DEFAULT '{}',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -112,21 +119,61 @@ ALTER TABLE interactions ENABLE ROW LEVEL SECURITY;
 
 -- Basic RLS policies (you can modify these based on your auth setup)
 CREATE POLICY "Users can access their own games" ON games FOR ALL USING (auth.uid()::text = user_id);
-CREATE POLICY "Users can access characters in their games" ON characters FOR ALL USING (
+-- Grant permissions to replication role for Realtime
+GRANT SELECT ON TABLE public.characters TO supabase_replication_admin;
+
+CREATE POLICY "Characters access policy" ON characters FOR ALL
+USING (
+    -- Allow if user owns the game (for authenticated users)
     EXISTS (SELECT 1 FROM games WHERE games.id = characters.game_id AND games.user_id = auth.uid()::text)
+    OR 
+    -- Allow everything if auth.uid() is null (replication context)
+    auth.uid() IS NULL
 );
-CREATE POLICY "Users can access locations in their games" ON locations FOR ALL USING (
+
+GRANT SELECT ON TABLE public.locations TO supabase_replication_admin;
+
+CREATE POLICY "Locations access policy" ON locations FOR ALL
+USING (
+    -- Allow if user owns the game (for authenticated users)
     EXISTS (SELECT 1 FROM games WHERE games.id = locations.game_id AND games.user_id = auth.uid()::text)
+    OR 
+    -- Allow everything if auth.uid() is null (replication context)
+    auth.uid() IS NULL
 );
-CREATE POLICY "Users can access clues in their games" ON clues FOR ALL USING (
+
+GRANT SELECT ON TABLE public.clues TO supabase_replication_admin;
+
+CREATE POLICY "Clues access policy" ON clues FOR ALL
+USING (
+    -- Allow if user owns the game (for authenticated users)
     EXISTS (SELECT 1 FROM games WHERE games.id = clues.game_id AND games.user_id = auth.uid()::text)
+    OR 
+    -- Allow everything if auth.uid() is null (replication context)
+    auth.uid() IS NULL
 );
-CREATE POLICY "Users can access timeline events in their games" ON timeline_events FOR ALL USING (
+
+GRANT SELECT ON TABLE public.timeline_events TO supabase_replication_admin;
+
+CREATE POLICY "Timeline events access policy" ON timeline_events FOR ALL
+USING (
+    -- Allow if user owns the game (for authenticated users)
     EXISTS (SELECT 1 FROM games WHERE games.id = timeline_events.game_id AND games.user_id = auth.uid()::text)
+    OR 
+    -- Allow everything if auth.uid() is null (replication context)
+    auth.uid() IS NULL
 );
 CREATE POLICY "Users can access interactions in their games" ON interactions FOR ALL USING (
     EXISTS (SELECT 1 FROM games WHERE games.id = interactions.game_id AND games.user_id = auth.uid()::text)
 );
+
+-- Set replica identity for realtime
+ALTER TABLE games REPLICA IDENTITY FULL;
+ALTER TABLE characters REPLICA IDENTITY FULL;
+ALTER TABLE locations REPLICA IDENTITY FULL;
+ALTER TABLE clues REPLICA IDENTITY FULL;
+ALTER TABLE timeline_events REPLICA IDENTITY FULL;
+ALTER TABLE interactions REPLICA IDENTITY FULL;
 
 -- Trigger to update updated_at on games table
 CREATE OR REPLACE FUNCTION update_updated_at_column()

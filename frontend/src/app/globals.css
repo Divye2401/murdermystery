@@ -1,26 +1,99 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Crimson+Text:wght@400;600&display=swap");
 @import "tailwindcss";
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --cream: #e7c6a2;
+
+  /* Characters page theme - Rich Burgundy */
+  --burgundy: #722f37;
+  --burgundy-light: #8b3a42;
+  --burgundy-dark: #5a252a;
+  --wine: #9d4e56;
+  --rose-gold: #d4a574;
+
+  /* Locations page theme - Moonlit Gothic */
+  --moonlight: #8da3b0;
+  --moonbeam: #b4c5d1;
+  --shadow: #4a5568;
+  --stone: #6b7280;
+  --moon-glow: #e2e8f0;
+
+  /* Evidence page theme - Detective Study */
+  --brass: #b8860b;
+  --gold-bright: #d4af37;
+  --parchment: #8b7355;
+  --paper-light: #f5e6d3;
+  --wood-dark: #654321;
+
+  /* Timeline page theme - Investigation Calendar */
+  --investigation-red: #dc2626;
+  --red-bright: #ef4444;
+  --calendar-paper: #f8fafc;
+  --ink-dark: #1e293b;
+  --pin-yellow: #fbbf24;
+
+  /* Settings page theme - Victorian Study */
+  --mahogany: #8b4513;
+  --brass-warm: #cd853f;
+  --leather-dark: #654321;
+  --study-paper: #f4f1e8;
+  --wood-light: #a0522d;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-cream: var(--cream);
+  --color-burgundy: var(--burgundy);
+  --color-burgundy-light: var(--burgundy-light);
+  --color-burgundy-dark: var(--burgundy-dark);
+  --color-wine: var(--wine);
+  --color-rose-gold: var(--rose-gold);
+  --color-moonlight: var(--moonlight);
+  --color-moonbeam: var(--moonbeam);
+  --color-shadow: var(--shadow);
+  --color-stone: var(--stone);
+  --color-moon-glow: var(--moon-glow);
+  --color-brass: var(--brass);
+  --color-gold-bright: var(--gold-bright);
+  --color-parchment: var(--parchment);
+  --color-paper-light: var(--paper-light);
+  --color-wood-dark: var(--wood-dark);
+  --color-investigation-red: var(--investigation-red);
+  --color-red-bright: var(--red-bright);
+  --color-calendar-paper: var(--calendar-paper);
+  --color-ink-dark: var(--ink-dark);
+  --color-pin-yellow: var(--pin-yellow);
+  --color-mahogany: var(--mahogany);
+  --color-brass-warm: var(--brass-warm);
+  --color-leather-dark: var(--leather-dark);
+  --color-study-paper: var(--study-paper);
+  --color-wood-light: var(--wood-light);
+  --font-sans: "Segoe UI", "Inter", system-ui, sans-serif;
+
+  --font-serif: "Crimson Text", "Times New Roman", serif;
+  --font-mono: "SF Mono", "Monaco", "Cascadia Code", monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* Global font styling */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  font-feature-settings: "rlig" 1, "calt" 1;
+}
+
+/* Mystery-themed typography classes */
+@layer utilities {
+  .font-mystery {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    letter-spacing: 0.025em;
+  }
+
+  .font-mystery-bold {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    letter-spacing: 0.025em;
+  }
 }
