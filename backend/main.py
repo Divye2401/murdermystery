@@ -16,7 +16,11 @@ app = FastAPI(title="Murder Mystery AI Backend", version="1.0.0")
 # Configure CORS for Next.js frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000","https://murdermystery-seven.vercel.app/"],  # Next.js frontend
+    allow_origins=[
+        "http://localhost:3000",  # Local development
+        "https://murdermystery-seven.vercel.app",  # Production frontend
+        os.getenv("FRONTEND_URL", "")  # Environment variable
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
