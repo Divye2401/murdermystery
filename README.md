@@ -2,7 +2,12 @@
 
 An immersive murder mystery game powered by **Agentic AI** that creates dynamic, personalized detective experiences. Players investigate crimes, interrogate suspects, and uncover clues in a world where every decision shapes the narrative through intelligent AI agents.
 
-![Game Dashboard](./images/dashboard-screenshot.png)
+<br />
+<br />
+
+![Game Dashboard](https://github.com/user-attachments/assets/8a37c340-b8e1-46fe-9504-fb08a076ec10)
+
+<br />
 
 ## 🤖 **Agentic AI Architecture**
 
@@ -59,14 +64,19 @@ This project showcases a sophisticated **multi-agent AI system** where specializ
 ```mermaid
 graph TD
     A[Player Input] --> B[Game Master Agent]
-    B --> C[Update Crew Agent]
-    C --> D[Database Updates]
-    C --> E[Image Generation Agent]
-    E --> F[Visual Assets]
-    B --> G[Response Generation]
-    D --> H[Real-time Frontend Updates]
+    B --> C[Database Agent]
+    B --> D[Roleplay Agent]
+    B --> E[Update Crew Agent]
+    E --> C[Database Agent]
+    E --> F[Image Generation Agent]
+    F --> G[Visual Assets]
+    B --> H[Response Generation]
+    E --> I[Real-time Frontend Updates]
     G --> H
-    F --> H
+    A -->J[Game Creation Agent]
+    J -->F
+    J -->H
+
 ```
 
 ## ✨ **Key Features**
@@ -78,7 +88,9 @@ graph TD
 - **Multiple Investigation Paths**: No single solution path - explore your way
 - **Real-time State Updates**: Game world responds immediately to your actions
 
-![Character Interaction](./images/character-interaction.png)
+![Character Interaction](https://github.com/user-attachments/assets/f85dd1b0-f712-4df8-a901-5b123dd32038)
+
+<br />
 
 ### **🤖 Advanced AI Features**
 
@@ -93,8 +105,12 @@ graph TD
 - **Atmospheric Audio**: Immersive soundscapes that adapt to different game areas
 - **Responsive Design**: Seamless experience across desktop and mobile devices
 - **Dark Mystery Theme**: Carefully crafted UI that enhances the detective atmosphere
+  
+<br />
 
-![Locations View](./images/locations-view.png)
+![Locations View](https://github.com/user-attachments/assets/51e6cb1c-84c0-4667-97dd-fbbdf75100bd)
+
+<br />
 
 ## 🛠️ **Technology Stack**
 
@@ -118,7 +134,7 @@ graph TD
 
 - **GPT-4** - Advanced language model for natural conversations
 - **DALL-E 3** - AI image generation with safety protocols
-- **CrewAI Framework** - Agent orchestration and task management
+- **CrewAI Framework** - Agent orchestration and task management in a heirarchical and sequential setting
 - **Custom Prompt Engineering** - Optimized prompts for mystery game context
 
 ## 🚀 **Getting Started**
